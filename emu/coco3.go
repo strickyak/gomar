@@ -816,9 +816,9 @@ func IsTermPath(path byte) bool {
 			desc := PeekW(dev + sym.V_DESC)
 			name := ModuleName(desc)
 			_ = procID
-			// fmt.Printf("<<< #%d %x.t%x.p%x/kpath=%x/dbt=%x/page=%x/pd=%x/dev=%x/desc=%x/name=%s>>>", Steps, procID, task, path, kpath, pathDBT, pdPage, pd, dev, desc, name)
+			// fmt.Printf("<<< #%d %x.t%x.p%x/kpath=%x/dbt=%x/page=%x/pd=%x/dev=%x/desc=%x/name=%s>>>", Cycles, procID, task, path, kpath, pathDBT, pdPage, pd, dev, desc, name)
 			if (pdPage & 255) != 0 {
-				// CoreDump(fmt.Sprintf("/tmp/core#%d", Steps))
+				// CoreDump(fmt.Sprintf("/tmp/core#%d", Cycles))
 			}
 			isTerm = (name == *FlagTerm)
 		}

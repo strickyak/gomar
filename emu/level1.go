@@ -166,7 +166,6 @@ func DoDumpPageZero()      {}
 func DoDumpProcesses()     {}
 func DoDumpAllPathDescs()  {}
 func DumpGimeStatus()      {}
-func HandleBtBug()         {}
 
 func MapAddr(logical Word, quiet bool) int {
 	return int(logical)

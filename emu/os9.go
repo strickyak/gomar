@@ -637,6 +637,14 @@ func PrintableStringThruEOS(a Word, max Word) string {
 	return buf.String()
 }
 
+func StrungMemory(a Word, max Word) string {
+	var buf bytes.Buffer
+	for i := Word(0); i < yreg && i < max; i++ {
+		buf.WriteByte(PeekB(a + i))
+	}
+	return buf.String()
+}
+
 func PrintableMemory(a Word, max Word) string {
 	var buf bytes.Buffer
 	for i := Word(0); i < yreg && i < max; i++ {
@@ -646,7 +654,7 @@ func PrintableMemory(a Word, max Word) string {
 		} else if ch == '\n' || ch == '\r' {
 			buf.WriteByte('\n')
 		} else {
-			fmt.Fprintf(&buf, "[%d]", ch)
+			fmt.Fprintf(&buf, "{%d}", ch)
 		}
 	}
 	return buf.String()
@@ -660,7 +668,7 @@ func ModuleName(module_loc Word) string {
 func Regs() string {
 	var buf bytes.Buffer
 	Z(&buf, "a=%02x b=%02x x=%04x:%04x y=%04x:%04x u=%04x:%04x s=%04x:%04x,%04x cc=%s dp=%02x #%d",
-		GetAReg(), GetBReg(), xreg, PeekW(xreg), yreg, PeekW(yreg), ureg, PeekW(ureg), sreg, PeekW(sreg), PeekW(sreg+2), ccbits(ccreg), dpreg, Steps)
+		GetAReg(), GetBReg(), xreg, PeekW(xreg), yreg, PeekW(yreg), ureg, PeekW(ureg), sreg, PeekW(sreg), PeekW(sreg+2), ccbits(ccreg), dpreg, Cycles)
 	return buf.String()
 }
 
@@ -897,10 +905,10 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 	case 0x8A:
 		s = "I$Write  : Write Data"
 		path := GetAReg()
-		if nando || IsTermPath(path) {
+		if IsTermPath(path) {
 			p = PrintableMemory(xreg, yreg)
-			if nando {
-				fmt.Printf("[%q]", p)
+			if *FlagQuotedTerminal {
+				fmt.Printf("[%q]", StrungMemory(xreg, yreg))
 			} else {
 				fmt.Printf("%s", p)
 			}
@@ -913,18 +921,12 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 		s = "I$WritLn : Write Line of ASCII Data"
 		{
 			path := GetAReg()
-			if nando || IsTermPath(path) {
+			if IsTermPath(path) {
 				str := PrintableStringThruEOS(xreg, yreg)
-				if nando {
-					fmt.Printf("%q", str)
+				if *FlagQuotedTerminal {
+					fmt.Printf("%q ", str)
 				} else {
 					fmt.Printf("%s", str)
-				}
-
-				for _, ch := range []byte(str) {
-					if Disp != nil {
-						Disp.PutChar(ch)
-					}
 				}
 			}
 		}
@@ -948,5 +950,5 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 	if true || s == "" {
 		s, _ = sym.SysCallNames[b]
 	}
-	return F("OS9$%02x <%s> {%s} #%d", b, s, p, Steps), returns
+	return F("OS9$%02x <%s> {%s} #%d", b, s, p, Cycles), returns
 }

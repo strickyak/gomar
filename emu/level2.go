@@ -346,13 +346,6 @@ func MemoryModules() {
 		L("#MemoryModules)")
 	})
 }
-func HandleBtBug() {
-	if pcreg == sym.D_BtBug {
-		if len(DebugString) < 20 {
-			DebugString += string(rune(GetAReg() & 0x7F))
-		}
-	}
-}
 func PrettyDumpHex64(addr Word, size uint) {
 	if false {
 		saved_mmut := MmuTask

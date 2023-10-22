@@ -116,8 +116,8 @@ func PrintHyper(var_ptr Word) {
 		i++
 	}
 	str := bb.String()
-	fmt.Printf("HYPER: [#%d %q]\n", Steps, str)
-	log.Printf("HYPER: [#%d %q]", Steps, str)
+	fmt.Printf("HYPER: [#%d %q]\n", Cycles, str)
+	log.Printf("HYPER: [#%d %q]", Cycles, str)
 }
 
 func MachinePointerToString(p Word) []byte {
@@ -173,8 +173,8 @@ func emit_Words(forOutput bool, args ...Word) {
 		i++
 	}
 	str := bb.String()
-	fmt.Printf("EMIT %v [ #%d  %q ]\n", forOutput, Steps, str)
-	log.Printf("EMIT %v [ #%d  %q ]", forOutput, Steps, str)
+	fmt.Printf("EMIT %v [ #%d  %q ]\n", forOutput, Cycles, str)
+	log.Printf("EMIT %v [ #%d  %q ]", forOutput, Cycles, str)
 
 	if forOutput {
 		Got.WriteString(str)

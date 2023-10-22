@@ -96,6 +96,28 @@ func AssertLE[N Number](a, b N, args ...any) {
 	}
 }
 
+func AssertGT[N Number](a, b N, args ...any) {
+	if a <= b {
+		s := fmt.Sprintf("AssertGT Fails: (%v .GT. %v)", a, b)
+		for _, x := range args {
+			s += fmt.Sprintf(" ; %v", x)
+		}
+		s += "\n[[[[[[\n" + string(debug.Stack()) + "\n]]]]]]\n"
+		log.Panic(s)
+	}
+}
+
+func AssertGE[N Number](a, b N, args ...any) {
+	if a < b {
+		s := fmt.Sprintf("AssertGE Fails: (%v .GE. %v)", a, b)
+		for _, x := range args {
+			s += fmt.Sprintf(" ; %v", x)
+		}
+		s += "\n[[[[[[\n" + string(debug.Stack()) + "\n]]]]]]\n"
+		log.Panic(s)
+	}
+}
+
 func Check(err error, args ...any) {
 	if err != nil {
 		s := fmt.Sprintf("Check Fails: %v", err)

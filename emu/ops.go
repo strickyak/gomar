@@ -697,10 +697,12 @@ func clr() {
 }
 
 func flag0() {
-	if iflag != 0 { // in case flag already set by previous flag instr don't recurse //
-		pcreg--
-		return
-	}
+	/*
+		if iflag != 0 { // in case flag already set by previous flag instr don't recurse //
+			pcreg--
+			return
+		}
+	*/
 	iflag = 1
 	ireg = B(pcreg)
 	pcreg++
@@ -710,10 +712,12 @@ func flag0() {
 }
 
 func flag1() {
-	if iflag != 0 { // in case flag already set by previous flag instr don't recurse //
-		pcreg--
-		return
-	}
+	/*
+		if iflag != 0 { // in case flag already set by previous flag instr don't recurse //
+			pcreg--
+			return
+		}
+	*/
 	iflag = 2
 	ireg = B(pcreg)
 	pcreg++
@@ -912,14 +916,14 @@ func bra() {
 
 		// DoDumpAllMemoryPhys()
 		DumpAllMemory()
-		log.Panic("Panic: SELF-BRANCH at pc=$%04x", pcreg-1)
+		log.Panicf("Panic: SELF-BRANCH at pc=$%04x", pcreg-1)
 	}
-	Dis_inst(CondS(IFLAG(), "l", ""), "bra", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bra", int64(CondI(IFLAG(), 5, 3)))
 	br(true)
 }
 
 func brn() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "brn", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "brn", int64(CondI(IFLAG(), 5, 3)))
 	br(false)
 
 	// The magic sequence "NOP ; BRN #offset" (i.e. $12 $21 offset)
@@ -954,72 +958,72 @@ func brn() {
 }
 
 func bhi() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bhi", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bhi", int64(CondI(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x05))
 }
 
 func bls() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bls", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bls", int64(CondI(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x05)
 }
 
 func bcc() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bcc", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bcc", int64(CondI(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x01))
 }
 
 func bcs() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bcs", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bcs", int64(CondI(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x01)
 }
 
 func bne() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bne", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bne", int64(CondI(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x04))
 }
 
 func beq() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "beq", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "beq", int64(CondI(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x04)
 }
 
 func bvc() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bvc", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bvc", int64(CondI(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x02))
 }
 
 func bvs() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bvs", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bvs", int64(CondI(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x02)
 }
 
 func bpl() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bpl", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bpl", int64(CondI(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x08))
 }
 
 func bmi() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bmi", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bmi", int64(CondI(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x08)
 }
 
 func bge() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bge", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bge", int64(CondI(IFLAG(), 5, 3)))
 	br(!NXORV())
 }
 
 func blt() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "blt", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "blt", int64(CondI(IFLAG(), 5, 3)))
 	br(NXORV())
 }
 
 func bgt() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bgt", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "bgt", int64(CondI(IFLAG(), 5, 3)))
 	br(!(NXORV() || 0 != ccreg&0x04))
 }
 
 func ble() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "ble", CondI(IFLAG(), 5, 3))
+	Dis_inst(CondS(IFLAG(), "l", ""), "ble", int64(CondI(IFLAG(), 5, 3)))
 	br(NXORV() || 0 != ccreg&0x04)
 }
 
@@ -1065,7 +1069,7 @@ func bit_count(b byte) int {
 			count++
 			Dis_ops(CondS(count > 1, ",", ""),
 				reg_for_bit_count[i],
-				1+CondI(i < 4, 1, 0))
+				1+int64(CondI(i < 4, 1, 0)))
 		}
 		mask >>= 1
 	}
@@ -1372,7 +1376,7 @@ func ccbits(b byte) string {
 }
 
 func init() {
-	instructionTable = []func(){
+	instructionTable = [256]func(){
 		neg, ill, ill, com, lsr, ill, ror, asr,
 		asl, rol, dec, ill, inc, tst, jmp, clr,
 		flag0, flag1, nop, sync_inst, ill, ill, lbra, lbsr,

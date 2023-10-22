@@ -1,7 +1,7 @@
 package emu
 
 import (
-	"github.com/strickyak/gomar/display"
+	//NODISPLAY//"github.com/strickyak/gomar/display"
 	. "github.com/strickyak/gomar/gu"
 	"github.com/strickyak/gomar/sym"
 
@@ -19,7 +19,7 @@ import (
 )
 
 var FlagTraceVerbosity = flag.String("vv", "", "Trace verbosity chars") // Trace Verbosity
-var FlagTraceAfter = flag.Uint64("t", MaxUint64, "Tracing starts after this many steps")
+var FlagTraceAfter = flag.Int64("t", MaxInt64, "Tracing starts after this many steps")
 
 func Main() {
 	CompileWatches()
@@ -28,8 +28,8 @@ func Main() {
 	keystrokes := make(chan byte, 0)
 	go InputRoutine(keystrokes)
 
-	CocodChan := make(chan *display.CocoDisplayParams, 50)
-	Disp = display.NewDisplay(mem[:], 80, 25, CocodChan, keystrokes, &sam, PeekBWithInt)
+	//NODISPLAY// CocodChan := make(chan *display.CocoDisplayParams, 50)
+	//NODISPLAY// Disp = display.NewDisplay(mem[:], 80, 25, CocodChan, keystrokes, &sam, PeekBWithInt)
 
 	Logd("(begin roms)")
 	if *FlagBootImageFilename != "" {
@@ -155,29 +155,25 @@ func Main() {
 		log.Fatalf("Before run, pcreg is still 0")
 	}
 
-	sreg = 0x8000
+	sreg = 0
 	dpreg = 0
 	iflag = 0
 
 	Dis_len(0)
-	cycles_sum = 0
 
 	defer func() {
 		Finish()
 	}()
 
-	if *FlagBasicText {
-		CocodChan <- GetCocoDisplayParams()
-	}
-
-	max := uint64(MaxUint64)
+	max := int64(MaxInt64)
 	if *FlagMaxSteps > 0 {
 		max = *FlagMaxSteps
 	}
 	stepsUntilTimer := *FlagClock
 	early := true
 
-	for Steps = uint64(0); Steps < max; Steps++ {
+	Cycles = int64(0)
+	for Cycles < max {
 		if early {
 			early = EarlyAction()
 		}
@@ -204,20 +200,9 @@ func Main() {
 			if (irqs_pending&IRQ_PENDING) != 0 && (ccreg&CC_INHIBIT_IRQ) == 0 {
 
 				irq(keystrokes)
-				CocodChan <- GetCocoDisplayParams()
 				continue
 			}
 		}
-
-		if *FlagBasicText {
-			if (Steps & 255) == 0 {
-				CocodChan <- GetCocoDisplayParams()
-				// ShowBasicText() // do it on RTS and PULS, instead.
-			}
-		}
-
-		// Take one step.
-		cycles = 0
 
 		ireg = B(pcreg)
 		if pcreg == Word(*FlagTriggerPc) && ireg == byte(*FlagTriggerOp) {
@@ -230,11 +215,9 @@ func Main() {
 		pcreg++
 
 		// Process instruction
-		HandleBtBug()
 		instructionTable[ireg]()
-		cycles_sum += int64(cycles)
 
-		if Steps >= *FlagTraceAfter {
+		if true || Cycles >= *FlagTraceAfter {
 			Trace()
 		}
 
@@ -242,9 +225,10 @@ func Main() {
 			ParanoidAsserts()
 		}
 	} /* next step */
-	if *FlagMaxSteps > 0 {
-		if Steps >= max {
-			log.Fatalf("MAX STEPES REACHED: %d", Steps)
+
+	if max > 0 {
+		if Cycles >= max {
+			log.Fatalf("MAX CYCLES REACHED: %d.", Cycles)
 		}
 	}
 }
@@ -409,7 +393,7 @@ func swi() {
 }
 
 func rti() {
-	if Steps >= *FlagTraceAfter {
+	if Cycles >= *FlagTraceAfter {
 		DoDumpSysMap()
 	}
 
@@ -461,8 +445,8 @@ func rti() {
 				PrettyDumpHex64(0, 0xFFFF)
 			*/
 
-			L("RETURN ERROR: $%x(%v): OS9KERNEL%d %s #%d", errcode, DecodeOs9Error(errcode), luser, describe, Steps)
-			L("\tregs: %s  #%d", Regs(), Steps)
+			L("RETURN ERROR: $%x(%v): OS9KERNEL%d %s #%d", errcode, DecodeOs9Error(errcode), luser, describe, Cycles)
+			L("\tregs: %s  #%d", Regs(), Cycles)
 			L("\t%s", ExplainMMU())
 			DoDumpAllMemory() // yak
 		} else {
@@ -485,8 +469,8 @@ func rti() {
 				luser = 1
 			}
 
-			L("RETURN OKAY: OS9KERNEL%d %s #%d", luser, describe, Steps)
-			L("\tregs: %s  #%d", Regs(), Steps)
+			L("RETURN OKAY: OS9KERNEL%d %s #%d", luser, describe, Cycles)
+			L("\tregs: %s  #%d", Regs(), Cycles)
 			L("\t%s", ExplainMMU())
 			DoDumpAllMemory() // yak
 

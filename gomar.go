@@ -119,4 +119,18 @@ under the terms of the GNU General Public License version 2.
 /*
   HINT
   go run --tags=level2,coco3,hyper  gomar.go -boot .o/drive/boot2coco3 -disk .o/drive/disk2 -v=abcdefghijklmnopqrstuvwxyz
+
+  skipping -v=m:
+  go run -x --tags=coco3,level2,cocoio,trace,d gomar.go  --rom_a000 /home/strick/6809/ROMS/color64bas.rom  --rom_8000 /home/strick/6809/ROMS/color64extbas.rom  --cart ~/nando/coco-shelf/build-frobio/axiom4-whole.rom   -t 1 -v=abcdefghijklnopqrstuvwxyz
+
+  ----------------
+
+  /home/strick/nando/coco-shelf/bin/server -block0  results/LEMMINGS/Nitros9_Coco3_M6809_Level2.dsk -program results/LEMMINGS/Nitros9_Coco3_M6809_Level2.lem
+
+  go run -x --tags=coco3,level2,cocoio  gomar.go  --rom_a000 /home/strick/6809/ROMS/color64bas.rom  --rom_8000 /home/strick/6809/ROMS/color64extbas.rom  --cart ~/nando/coco-shelf/build-frobio/axiom4-whole.rom
+
+  go run -x --tags=coco3,level2,cocoio,trace,d gomar.go  --rom_a000 /home/strick/6809/ROMS/color64bas.rom  --rom_8000 /home/strick/6809/ROMS/color64extbas.rom  --cart ~/nando/coco-shelf/build-frobio/axiom4-whole.rom   -t 1 -v=abcdefghijklnopqrstuvwxyz
+
+  -----------------
+
 */

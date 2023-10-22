@@ -3,7 +3,7 @@ package emu
 // See credits.go
 
 import (
-	"github.com/strickyak/gomar/display"
+	//NODISPLAY// "github.com/strickyak/gomar/display"
 	. "github.com/strickyak/gomar/gu"
 	"github.com/strickyak/gomar/sym"
 
@@ -29,18 +29,17 @@ var FlagRom8000Filename = flag.String("rom_8000", "", "")
 var FlagRomA000Filename = flag.String("rom_a000", "", "")
 var FlagKernelFilename = flag.String("kernel", "", "")
 var FlagDiskImageFilename = flag.String("disk", "../_disk_", "")
-var FlagMaxSteps = flag.Uint64("max", 0, "")
-var FlagClock = flag.Uint64("clock", 5*1000*1000, "")
+var FlagMaxSteps = flag.Int64("max", 0, "")
+var FlagClock = flag.Int64("clock", 5*1000*1000, "")
 var FlagBasicText = flag.Bool("basic_text", false, "")
 var FlagUserResetVector = flag.Bool("use_reset_vector", false, "")
+var FlagQuotedTerminal = flag.Bool("quoted_terminal", false, "quote terminal output for debugging")
 
 var FlagWatch = flag.String("watch", "", "Sequence of module:addr:reg:message,...")
 var FlagTriggerPc = flag.Uint64("trigger_pc", 0xC00D, "")
 var FlagTriggerOp = flag.Uint64("trigger_op", 0x17, "")
 var FlagTraceOnOS9 = flag.String("trigger_os9", "", "")
 var RegexpTraceOnOS9 *regexp.Regexp
-
-const nando = false
 
 type Watch struct {
 	Where    string
@@ -209,12 +208,11 @@ func TfrReg(b byte) EA {
 	return DRegEA + EA(b)
 }
 
-var CocodChan chan *display.CocoDisplayParams
-var Disp *display.Display
+//NODISPLAY//var CocodChan chan *display.CocoDisplayParams
+//NODISPLAY//var Disp *display.Display
 
 var fdump int
-var Steps uint64
-var DebugString string
+var Cycles int64
 
 var Os9Description = make(map[int]string) // Describes OS9 kernel call at this big stack addr.
 
@@ -239,14 +237,10 @@ var dinst bytes.Buffer
 /* disassembled operand buffer */
 var dops bytes.Buffer
 
-/* instruction cycles */
-var cycles int
-var cycles_sum int64
-
 var Waiting bool
 var irqs_pending byte
 
-var instructionTable []func()
+var instructionTable [256]func()
 
 //////////////////////////////////////////////////////////////
 
@@ -428,7 +422,7 @@ func Os9HypervisorCall(syscall byte) bool {
 	return handled
 }
 
-const MaxUint64 = 0xFFFFFFFFFFFFFFFF
+const MaxInt64 = 0x7FFFFFFFFFFFFFFF
 
 var PrevBasicText []byte
 
@@ -449,7 +443,7 @@ func ShowBasicText() {
 	start := Word(sam.Fx) << 9
 	limit := start + 0x200
 
-	Logd("STEP: %d .... at $%04x", Steps, start)
+	Logd("CYCLE: #%d .... at $%04x", Cycles, start)
 	for y := start; y < limit; y += 32 {
 		text := make([]byte, 32)
 		for x := Word(0); x < 32; x++ {

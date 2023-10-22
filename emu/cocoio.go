@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -80,7 +82,22 @@ func wizReset() {
 	}
 }
 
+// TODO -- Wouldn't it be better to have a port-remapping flag.
+func Add10000IfForbiddenPort(hostport string) string {
+	words := strings.Split(hostport, ":")
+	if len(words) == 2 {
+		host, port := words[0], words[1]
+		p, err := strconv.ParseInt(port, 10, 64)
+		if err == nil && 1 <= p && p <= 1023 {
+			return Fmt("%s:%d", host, p+10000)
+		}
+	}
+	return hostport // unchanged.
+}
+
 func OpenTCP(localHostPort string, remoteHostPort string) *net.TCPConn {
+	localHostPort = Add10000IfForbiddenPort(localHostPort)
+
 	laddy, err := net.ResolveTCPAddr("tcp", localHostPort)
 	if err != nil {
 		log.Panicf("WIZ: cannot ResolveTCPAddr: %v", err)
@@ -98,6 +115,8 @@ func OpenTCP(localHostPort string, remoteHostPort string) *net.TCPConn {
 }
 
 func OpenUDP(hostport string) *net.UDPConn {
+	hostport = Add10000IfForbiddenPort(hostport)
+
 	addy, err := net.ResolveUDPAddr("udp", hostport)
 	if err != nil {
 		log.Panicf("WIZ: cannot ResolveUDPAddr: %v", err)
@@ -297,6 +316,9 @@ func wizRecvUDP(sock *socket) {
 
 	wizLog("UDP RECV socket %x", sock.k)
 	buf := make([]byte, 1500)
+	// TODO XXX
+	// THIS IS WRONG.  DO NOT BLOCK ON ReadFromUDP just because we did RECV which only means we freed up buffer space.
+	// Another goroutine should be ReadFromUDP and queueing the packets.
 	size, peer, err := sock.uconn.ReadFromUDP(buf)
 	wizLog("UDP RECV socket %x got size $%x peer %v err %v", sock.k, size, peer, err)
 	if err != nil {
@@ -491,8 +513,14 @@ func wizSocketlessInterruptReg() byte {
 func wizGet(a Word) byte {
 	var z byte
 	switch a {
+	case 0x003C: // PHYSR0: Physical Status Regsiter 0
+		z = 0x01 // cable plugged in; link up.
+
 	case 0x005F:
 		z = wizSocketlessInterruptReg()
+
+	case 0x0080: // VERR: Version Register
+		z = 0x51 // Always version $51
 
 	case 0x0082,
 		0x0083:
