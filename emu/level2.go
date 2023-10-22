@@ -142,10 +142,6 @@ func DoDumpPageZero() {
 
 func DoDumpProcDesc(a Word, queue string, followQ bool) {
 	// PrettyDumpHex64(a, 0x100)
-	if B(a+sym.P_PID) == 0 {
-		L("but PID=0")
-		return
-	}
 
 	tmp := MmuTask
 	MmuTask = 0
@@ -347,18 +343,6 @@ func MemoryModules() {
 	})
 }
 func PrettyDumpHex64(addr Word, size uint) {
-	if false {
-		saved_mmut := MmuTask
-		MmuTask = 0
-		saved_map00 := MmuMap[0][0]
-		MmuMap[0][0] = 0
-		defer func() {
-			MmuTask = saved_mmut
-			MmuMap[0][0] = saved_map00
-		}()
-	}
-	////////////
-
 	L(";")
 	const PERLINE = 64
 	var p Word
@@ -403,4 +387,183 @@ func PrettyDumpHex64(addr Word, size uint) {
 		L("%s", buf.String())
 	}
 	L(";")
+}
+
+func DoDumpProcsAndPaths() {
+	WithMmuTask(0, DoDumpProcsAndPathsPrime)
+}
+func DoDumpProcsAndPathsPrime() {
+	if V['p'] {
+		Logp("ProcsAndPaths:\n")
+
+		DoDumpPageZero()
+
+		Logp("ProcQ:Active")
+		active := PeekW(sym.D_AProcQ)
+		if active != 0 {
+			DoDumpProcDesc(active, "active", true)
+		}
+
+		Logp("ProcQ:Waiting")
+		waiting := PeekW(sym.D_WProcQ)
+		if waiting != 0 {
+			DoDumpProcDesc(waiting, "waiting", true)
+		}
+
+		Logp("ProcQ:Sleeping")
+		sleeping := PeekW(sym.D_SProcQ)
+		if sleeping != 0 {
+			DoDumpProcDesc(sleeping, "sleeping", true)
+		}
+
+		DoDumpPaths()
+		DoDumpDevices()
+	}
+}
+
+func DoDumpPaths() {
+	dbt := PeekW(sym.D_PthDBT)
+	Logp("DoDumpPaths=%x", dbt)
+	if dbt == 0 {
+		return
+	}
+	PrettyDumpHex64(dbt, 64)
+	for e := Word(0); e < 64; e++ {
+		ext := PeekB(dbt + e)
+		// Logp("e=%x ext=%x", e, ext)
+		if ext != 0 {
+			p := Word(ext) << 8
+			for j := Word(0); j < 4; j++ {
+				i := e*4 + j
+				if i == 0 {
+					continue
+				} // Skip directory slot.
+				pth := p + j*64
+				Logp("e=%x j=%x PATH=%x pth=%x", e, j, i, pth)
+				if PeekB(pth) == byte(i) {
+					DoDumpPath(i, pth)
+					PrettyDumpHex64(pth, 64)
+				}
+			}
+		}
+	}
+	Logp(";;")
+}
+
+func DoDumpPath(i Word, pth Word) {
+	/*
+	                  ORG       0
+	   PD.PD          RMB       1                   Path Number
+	   PD.MOD         RMB       1                   Mode (Read/Write/Update)
+	   PD.CNT         RMB       1                   Number of Open Images
+	   PD.DEV         RMB       2                   Device Table Entry Address
+	   PD.CPR         RMB       1                   Current Process
+	   PD.RGS         RMB       2                   Caller's Register Stack
+	   PD.BUF         RMB       2                   Buffer Address
+	   PD.FST         RMB       32-.                File Manager's Storage
+	   PD.OPT         EQU       .                   PD GetSts(0) Options
+	   PD.DTP         RMB       1                   Device Type
+	                  RMB       64-.                Path options
+	   PDSIZE         EQU       .
+	*/
+	Logp("PATH[%d] at $%x", i, pth)
+	Logp("  mode %x count %x dev/dte %x cur_proc %x regs %x buf %x type %x",
+		PeekB(pth+sym.PD_MOD),
+		PeekB(pth+sym.PD_CNT),
+		PeekW(pth+sym.PD_DEV),
+		PeekB(pth+sym.PD_CPR),
+		PeekW(pth+sym.PD_RGS),
+		PeekW(pth+sym.PD_BUF),
+		PeekB(pth+sym.PD_DTP))
+}
+
+func DoDumpDevices() {
+	/*
+	    983 *********************
+	    984 * Device Table Format
+	    985 *
+	    986                ORG       0
+	    987 V$DRIV         RMB       2                   Device Driver module
+	    988 V$STAT         RMB       2                   Device Driver Static storage
+	    989 V$DESC         RMB       2                   Device Descriptor module
+	    990 V$FMGR         RMB       2                   File Manager module
+	    991 V$USRS         RMB       1                   use count
+	    992                IFGT      Level-1
+	    993 V$DRIVEX       RMB       2                   Device Driver execution address
+	    994 V$FMGREX       RMB       2                   File Manager execution address
+	    995                ENDC
+	    996 DEVSIZ         EQU       .
+	    997
+	    998 *******************************
+	    999 * Device Static Storage Offsets
+	   1000 *
+	   1001                ORG       0
+	   1002 V.PAGE         RMB       1                   Port Extended Address
+	   1003 V.PORT         RMB       2                   Device 'Base' Port Address
+	   1004 V.LPRC         RMB       1                   Last Active Process ID
+	   1005 V.BUSY         RMB       1                   Active Process ID (0=UnBusy)
+	   1006 V.WAKE         RMB       1                   Active PD if Driver MUST Wake-up
+	   1007 V.USER         EQU       .                   Driver Allocation Origin
+	*/
+
+	devTable := PeekW(sym.D_DevTbl)
+	Logp("Device Table at $%x", devTable)
+	if devTable == 0 {
+		return
+	}
+	/*----*/
+	init := PeekW(sym.D_Init)
+	devCount := PeekB(init + 13) //sym.DevCnt
+	Logp("   ... %q Init at %x, devCount=%x [ init=%q sys=%q std=%q boot=%q os=%q install=%q level=%x %x.%x.%x +%x +%x ]",
+		ModuleName(init), init, devCount,
+		Os9String(init+PeekW(init+14)),
+		Os9String(init+PeekW(init+16)),
+		Os9String(init+PeekW(init+18)),
+		Os9String(init+PeekW(init+20)),
+		Os9String(init+PeekW(init+0x1D)),
+		Os9String(init+PeekW(init+0x1F)),
+		PeekB(init+0x17),
+		PeekB(init+0x18),
+		PeekB(init+0x19),
+		PeekB(init+0x1A),
+		PeekB(init+0x1B),
+		PeekB(init+0x1C),
+	)
+	/*----*/
+	const devSize = 13 // sym.DEVSIZ
+
+	for i := byte(0); i < devCount; i++ {
+		p := devTable + Word(i)*Word(devSize)
+		driverMod := PeekW(p + 0)
+		staticStorage := PeekW(p + 2)
+		descriptorMod := PeekW(p + 4)
+		managerMod := PeekW(p + 6)
+		count := PeekB(p + 8)
+		if descriptorMod != 0 {
+			Logp("   [%x] p=%x %q=desc=%x %q=driv=%x %q=mgr=%x store=%x count=%x", i, p, ModuleName(descriptorMod), descriptorMod, ModuleName(driverMod), driverMod, ModuleName(managerMod), managerMod, staticStorage, count)
+		}
+	}
+	Logp(";;")
+
+	/*
+		  5005                ldb       #DEVSIZ             Size of each device table entry
+		5006                ldx       <D.Init             Get ptr to INIT module
+		5007                lda       DevCnt,x            Get # of entries allowed in device table
+		5008                ldx       <D.DevTbl           Get start of device table
+		5009                mul                           Calculate offset to end of device table
+		5010                leay      d,x                 Point Y to end of Device table
+		5011                ldb       #DEVSIZ             Get device table entry size again
+		5012 DevLoop        ldu       V$DRIV,x            Get driver ptr for device we are checking
+		5013                ifne      H6309
+		5014                cmpr      u,w                 Same as original window?
+		5015                else
+		5016                cmpu      >GrfMem+gr00B5
+		5017                endc
+		5018                bne       NextEnt             No, skip to next entry
+		5019                ldu       V$STAT,x            Get static mem ptr for CC3/TC9IO device
+		5020                lda       V.WinType,u         Is this a Windint/Grfint window?
+		5021                bne       NextEnt             No, VDGINT so skip
+		5022                lda       V.InfVld,u          Is this static mem properly initialized?
+		5023                beq       NextEnt             No, skip
+	*/
 }

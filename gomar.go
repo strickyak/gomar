@@ -133,4 +133,6 @@ under the terms of the GNU General Public License version 2.
 
   -----------------
 
+go run -x --tags=coco3,level2,cocoio,d,trace  gomar.go  --rom_a000 /home/strick/6809/ROMS/color64bas.rom  --rom_8000 /home/strick/6809/ROMS/color64extbas.rom  --cart ~/nando/coco-shelf/build-frobio/axiom4-whole.rom   -t 5000000 --borges /sy/doing_os9/borges/ -v=dpm
+
 */

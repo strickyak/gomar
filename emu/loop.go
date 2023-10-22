@@ -393,9 +393,10 @@ func swi() {
 }
 
 func rti() {
-	if Cycles >= *FlagTraceAfter {
-		DoDumpSysMap()
-	}
+	//if Cycles >= *FlagTraceAfter {
+	DoDumpProcsAndPathsPrime()
+	DoDumpSysMap()
+	//}
 
 	stack := MapAddr(sreg, true /*quiet*/)
 	describe := Os9Description[stack]
@@ -448,7 +449,6 @@ func rti() {
 			L("RETURN ERROR: $%x(%v): OS9KERNEL%d %s #%d", errcode, DecodeOs9Error(errcode), luser, describe, Cycles)
 			L("\tregs: %s  #%d", Regs(), Cycles)
 			L("\t%s", ExplainMMU())
-			DoDumpAllMemory() // yak
 		} else {
 			switch back1 {
 			case 0x82, 0x83, 0x84: // I$Dup, I$Create, I$Open
@@ -472,7 +472,6 @@ func rti() {
 			L("RETURN OKAY: OS9KERNEL%d %s #%d", luser, describe, Cycles)
 			L("\tregs: %s  #%d", Regs(), Cycles)
 			L("\t%s", ExplainMMU())
-			DoDumpAllMemory() // yak
 
 			if back1 == 0x8B {
 				var buf bytes.Buffer
@@ -486,5 +485,8 @@ func rti() {
 		// Os9Description[stack] = "" // Clear description
 		delete(Os9Description, stack)
 
+	}
+	if V['M'] {
+		DoDumpAllMemory() // yak
 	}
 }
