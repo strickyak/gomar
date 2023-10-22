@@ -353,35 +353,6 @@ func SETSTATUS(a byte, b byte, res Word) {
 	SETNZ8(byte(res))
 }
 
-func CondB(b bool, x, y byte) byte {
-	if b {
-		return x
-	} else {
-		return y
-	}
-}
-func CondW(b bool, x, y Word) Word {
-	if b {
-		return x
-	} else {
-		return y
-	}
-}
-func CondI(b bool, x, y int) int {
-	if b {
-		return x
-	} else {
-		return y
-	}
-}
-func CondS(b bool, x, y string) string {
-	if b {
-		return x
-	} else {
-		return y
-	}
-}
-
 func AOrB(aIfZero byte) EA {
 	if aIfZero == 0 {
 		return ARegEA
@@ -392,7 +363,7 @@ func AOrB(aIfZero byte) EA {
 
 func add() {
 	var aop, bop, res Word
-	Dis_inst("add", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("add", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = Word(accum.GetB())
 	bop = Word(eaddr8().GetB())
@@ -403,7 +374,7 @@ func add() {
 
 func sbc() {
 	var aop, bop, res Word
-	Dis_inst("sbc", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("sbc", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = Word(accum.GetB())
 	bop = Word(eaddr8().GetB())
@@ -414,7 +385,7 @@ func sbc() {
 
 func sub() {
 	var aop, bop, res Word
-	Dis_inst("sub", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("sub", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = Word(accum.GetB())
 	bop = Word(eaddr8().GetB())
@@ -425,7 +396,7 @@ func sub() {
 
 func adc() {
 	var aop, bop, res Word
-	Dis_inst("adc", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("adc", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = Word(accum.GetB())
 	bop = Word(eaddr8().GetB())
@@ -436,7 +407,7 @@ func adc() {
 
 func cmp() {
 	var aop, bop, res Word
-	Dis_inst("cmp", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("cmp", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = Word(accum.GetB())
 	bop = Word(eaddr8().GetB())
@@ -446,7 +417,7 @@ func cmp() {
 
 func and() {
 	var aop, bop, res byte
-	Dis_inst("and", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("and", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = (accum.GetB())
 	bop = (eaddr8().GetB())
@@ -457,7 +428,7 @@ func and() {
 }
 func or() {
 	var aop, bop, res byte
-	Dis_inst("or", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("or", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = (accum.GetB())
 	bop = (eaddr8().GetB())
@@ -468,7 +439,7 @@ func or() {
 }
 func eor() {
 	var aop, bop, res byte
-	Dis_inst("eor", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("eor", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = (accum.GetB())
 	bop = (eaddr8().GetB())
@@ -479,7 +450,7 @@ func eor() {
 }
 func bit() {
 	var aop, bop, res byte
-	Dis_inst("bit", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("bit", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	aop = (accum.GetB())
 	bop = (eaddr8().GetB())
@@ -489,7 +460,7 @@ func bit() {
 }
 
 func ld() {
-	Dis_inst("ld", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("ld", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	res := eaddr8().GetB()
 	SETNZ8(res)
@@ -498,7 +469,7 @@ func ld() {
 }
 
 func st() {
-	Dis_inst("st", CondS(0 != (ireg&0x40), "b", "a"), 2)
+	Dis_inst("st", Cond(0 != (ireg&0x40), "b", "a"), 2)
 	accum := AOrB(ireg & 0x40)
 	res := accum.GetB()
 	eaddr8().PutB(res)
@@ -918,12 +889,12 @@ func bra() {
 		DumpAllMemory()
 		log.Panicf("Panic: SELF-BRANCH at pc=$%04x", pcreg-1)
 	}
-	Dis_inst(CondS(IFLAG(), "l", ""), "bra", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bra", int64(Cond(IFLAG(), 5, 3)))
 	br(true)
 }
 
 func brn() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "brn", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "brn", int64(Cond(IFLAG(), 5, 3)))
 	br(false)
 
 	// The magic sequence "NOP ; BRN #offset" (i.e. $12 $21 offset)
@@ -958,72 +929,72 @@ func brn() {
 }
 
 func bhi() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bhi", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bhi", int64(Cond(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x05))
 }
 
 func bls() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bls", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bls", int64(Cond(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x05)
 }
 
 func bcc() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bcc", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bcc", int64(Cond(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x01))
 }
 
 func bcs() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bcs", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bcs", int64(Cond(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x01)
 }
 
 func bne() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bne", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bne", int64(Cond(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x04))
 }
 
 func beq() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "beq", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "beq", int64(Cond(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x04)
 }
 
 func bvc() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bvc", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bvc", int64(Cond(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x02))
 }
 
 func bvs() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bvs", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bvs", int64(Cond(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x02)
 }
 
 func bpl() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bpl", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bpl", int64(Cond(IFLAG(), 5, 3)))
 	br(0 == (ccreg & 0x08))
 }
 
 func bmi() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bmi", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bmi", int64(Cond(IFLAG(), 5, 3)))
 	br(0 != ccreg&0x08)
 }
 
 func bge() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bge", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bge", int64(Cond(IFLAG(), 5, 3)))
 	br(!NXORV())
 }
 
 func blt() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "blt", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "blt", int64(Cond(IFLAG(), 5, 3)))
 	br(NXORV())
 }
 
 func bgt() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "bgt", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "bgt", int64(Cond(IFLAG(), 5, 3)))
 	br(!(NXORV() || 0 != ccreg&0x04))
 }
 
 func ble() {
-	Dis_inst(CondS(IFLAG(), "l", ""), "ble", int64(CondI(IFLAG(), 5, 3)))
+	Dis_inst(Cond(IFLAG(), "l", ""), "ble", int64(Cond(IFLAG(), 5, 3)))
 	br(NXORV() || 0 != ccreg&0x04)
 }
 
@@ -1067,9 +1038,9 @@ func bit_count(b byte) int {
 	for i := 0; i <= 7; i++ {
 		if (b & mask) != 0 {
 			count++
-			Dis_ops(CondS(count > 1, ",", ""),
+			Dis_ops(Cond(count > 1, ",", ""),
 				reg_for_bit_count[i],
-				1+int64(CondI(i < 4, 1, 0)))
+				1+int64(Cond(i < 4, 1, 0)))
 		}
 		mask >>= 1
 	}

@@ -245,8 +245,8 @@ func PutIOByteI(a Word, b byte) {
 	case 0xFF40: /* CONTROL */
 		{
 			disk_control = b
-			disk_side = CondB(b&0x40 != 0, 1, 0)
-			disk_drive = CondB((b&1 != 0), 1, CondB((b&2 != 0), 2, CondB((b&4 != 0), 3, 0)))
+			disk_side = byte(Cond(b&0x40 != 0, 1, 0))
+			disk_drive = byte(Cond((b&1 != 0), 1, Cond((b&2 != 0), 2, Cond((b&4 != 0), 3, 0))))
 
 			Logd("CONTROL: disk_command %x (control %x side %x drive %x)\n", disk_command, disk_control, disk_side, disk_drive)
 			if b == 0 {

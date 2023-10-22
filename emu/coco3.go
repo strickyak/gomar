@@ -193,7 +193,7 @@ func Os9StringWithMapping(addr Word, m Mapping) string {
 
 func ExplainMMU() string {
 	return F("mmu:%d task:%d [[ %02x %02x %02x %02x  %02x %02x %02x %02x || %02x %02x %02x %02x  %02x %02x %02x %02x ]]",
-		CondI(MmuEnable, 1, 0),
+		Cond(MmuEnable, 1, 0),
 		MmuTask&1,
 		MmuMap[0][0],
 		MmuMap[0][1],
