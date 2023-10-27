@@ -1,14 +1,17 @@
-//go:build coco1
-// +build coco1
+//go:build f256flat
 
 package emu
 
 import (
-	"github.com/strickyak/gomar/display"
+	// "github.com/strickyak/gomar/display"
 	// . "github.com/strickyak/gomar/gu"
 
+	"flag"
+	"io/ioutil"
 	"log"
 )
+
+var FlagF256FlatBooter = flag.String("f256flat-booter", "", "The OS9Boot file for f256 level 1")
 
 func DoDumpProcsAndPathsPrime() {
 	log.Printf("TODO: DoDumpProcsAndPathsPrime")
@@ -19,7 +22,19 @@ var MmuTask byte // but not used in coco1.
 const TraceMem = false // TODO: restore this some day.
 
 func EmitHardware() {}
-func InitHardware() {}
+func InitHardware() {
+	if *FlagF256FlatBooter != "" {
+		bb, err := ioutil.ReadFile(*FlagF256FlatBooter)
+		if err != nil {
+			log.Fatalf("Cannot read -f256flat-booter %q: %v", *FlagF256FlatBooter, err)
+		}
+		for i, b := range bb {
+			dest := i + 0x1000
+			mem[dest] = b
+		}
+	}
+	pcreg = W(0xFFFE)
+}
 
 func ExplainMMU() string             { return "" }
 func DoExplainMmuBlock(i int) string { return "" }
@@ -87,30 +102,6 @@ func PutGimeIOByte(a Word, b byte) {
 	log.Printf("TODO UNKNOWN PutGimeIOByte address: 0x%04x <- 0x%02x", a, b)
 	// log.Panicf("UNKNOWN PutGimeIOByte address: 0x%04x <- 0x%02x", a, b)
 }
-
-func GetCocoDisplayParams() *display.CocoDisplayParams {
-	z := &display.CocoDisplayParams{
-		BasicText:       *FlagBasicText,
-		Gime:            false,
-		Graphics:        false,
-		AttrsIfAlpha:    false,
-		VirtOffsetAddr:  0x8000, // TODO
-		HorzOffsetAddr:  0x80,   // TODO
-		VirtScroll:      0x0F,   // TODO
-		LinesPerField:   8,      // TODO
-		LinesPerCharRow: 8,      // TODO
-		Monochrome:      true,
-		HRES:            0,     // TODO
-		CRES:            0,     // TODO
-		HVEN:            false, // TODO
-	}
-	for i := 0; i < 16; i++ {
-		z.ColorMap[i] = byte(i) // TODO
-	}
-	return z
-}
-
-// TODO
 
 // TODO -- assume True for now.
 func IsTermPath(path byte) bool {

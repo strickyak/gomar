@@ -135,4 +135,16 @@ under the terms of the GNU General Public License version 2.
 
 go run -x --tags=coco3,level2,cocoio,d,trace  gomar.go  --rom_a000 /home/strick/6809/ROMS/color64bas.rom  --rom_8000 /home/strick/6809/ROMS/color64extbas.rom  --cart ~/nando/coco-shelf/build-frobio/axiom4-whole.rom   -t 5000000 --borges /sy/doing_os9/borges/ -v=dpm
 
+--------------------------------
+
+$ go run -x --tags=coco3,level2,cocoio  gomar.go -t 1  -v=dpm -boot /home/strick/go/src/github.com/strickyak/doing_os9/gomar/drive/boot2coco3.orig  -disk ~/nando/coco-shelf/nitros9/level2/coco3/NOS9_6809_L2_v030300_coco3_80d.dsk
+
+--------- Level 1 ----------
+
+go run -x --tags=coco1,level1  gomar.go -t 1  -boot /sy/doing_os9/gomar/drive/boot1coco1  -disk ~/nando/coco-shelf/nitros9/level1/coco1/NOS9_6809_L1_coco1_80d.dsk
+
+--------- f256flat ------------
+
+go run -x --tags=f256flat,level1,d,trace   gomar.go -t 1  -f256flat-booter ~/nando/coco-shelf/nitros9/level1/f256/bootfiles/booter  -disk ~/nando/coco-shelf/nitros9/level1/f256/NOS9_6809_L1_v030300_f256.dsk
+
 */

@@ -141,74 +141,77 @@ func DoDumpPageZero() {
 }
 
 func DoDumpProcDesc(a Word, queue string, followQ bool) {
-	// PrettyDumpHex64(a, 0x100)
+	if true {
 
-	tmp := MmuTask
-	MmuTask = 0
-	defer func() {
-		MmuTask = tmp
-	}()
+		// PrettyDumpHex64(a, 0x100)
 
-	currency := ""
-	if W(sym.D_Proc) == a {
-		currency = " CURRENT "
+		tmp := MmuTask
+		MmuTask = 0
+		defer func() {
+			MmuTask = tmp
+		}()
+
+		currency := ""
+		if W(sym.D_Proc) == a {
+			currency = " CURRENT "
+		}
+		// L("a=%04x", a)
+		// switch Level {
+		// case 1, 2:
+		// {
+		begin := PeekW(a + sym.P_PModul)
+		name_str := "?"
+		mod_str := "?"
+		if begin != 0 {
+			m := GetMappingTask0(a + sym.P_DATImg)
+			modPhys := MapAddrWithMapping(begin, m)
+			modPhysPlus4 := PeekWPhys(modPhys + 4)
+			if modPhysPlus4 > 0 {
+				name := begin + modPhysPlus4
+				name_str = Os9StringWithMapping(name, m)
+				mod_str = F("%q @%04x %v", name_str, begin, m)
+			}
+		}
+		L("Process %x %s %s @%x: id=%x pid=%x sid=%x cid=%x module=%s", B(a+sym.P_PID), queue, currency, a, B(a+sym.P_ID), B(a+sym.P_PID), B(a+sym.P_SID), B(a+sym.P_CID), mod_str)
+
+		L("   sp=%x task=%x PagCnt=%x User=%x Pri=%x Age=%x State=%x",
+			W(a+sym.P_SP), B(a+sym.P_Task), B(a+sym.P_PagCnt), W(a+sym.P_User), B(a+sym.P_Prior), B(a+sym.P_Age), B(a+sym.P_State))
+
+		L("   Queue=%x IOQP=%x IOQN=%x Signal=%x SigVec=%x SigDat=%x",
+			W(a+sym.P_Queue), B(a+sym.P_IOQP), B(a+sym.P_IOQN), B(a+sym.P_Signal), B(a+sym.P_SigVec), B(a+sym.P_SigDat))
+		L("   DIO %x %x %x  %x %x %x  PATH %x %x %x %x  %x %x %x %x  %x %x %x %x  %x %x %x %x",
+			W(a+sym.P_DIO), W(a+sym.P_DIO+2), W(a+sym.P_DIO+4),
+			W(a+sym.P_DIO+6), W(a+sym.P_DIO+8), W(a+sym.P_DIO+10),
+			B(a+sym.P_Path+0), B(a+sym.P_Path+1), B(a+sym.P_Path+2), B(a+sym.P_Path+3),
+			B(a+sym.P_Path+4), B(a+sym.P_Path+5), B(a+sym.P_Path+6), B(a+sym.P_Path+7),
+			B(a+sym.P_Path+8), B(a+sym.P_Path+9), B(a+sym.P_Path+10), B(a+sym.P_Path+11),
+			B(a+sym.P_Path+12), B(a+sym.P_Path+13), B(a+sym.P_Path+14), B(a+sym.P_Path+15))
+
+		if paranoid {
+			if B(a+sym.P_ID) > 10 {
+				panic("P_ID")
+			}
+			if B(a+sym.P_PID) > 10 {
+				panic("P_PID")
+			}
+			if B(a+sym.P_SID) > 10 {
+				panic("P_SID")
+			}
+			if B(a+sym.P_CID) > 10 {
+				panic("P_CID")
+			}
+			if W(a+sym.P_User) > 10 {
+				panic("P_User")
+			}
+		}
+
+		if followQ && W(a+sym.P_Queue) != 0 && queue != "Current" {
+			DoDumpProcDesc(W(a+sym.P_Queue), queue, followQ)
+		}
+
+		// }
+		// }
 	}
-	// L("a=%04x", a)
-	// switch Level {
-	// case 1, 2:
-	// {
-	begin := PeekW(a + sym.P_PModul)
-	name_str := "?"
-	mod_str := "?"
-	if begin != 0 {
-		m := GetMappingTask0(a + sym.P_DATImg)
-		modPhys := MapAddrWithMapping(begin, m)
-		modPhysPlus4 := PeekWPhys(modPhys + 4)
-		if modPhysPlus4 > 0 {
-			name := begin + modPhysPlus4
-			name_str = Os9StringWithMapping(name, m)
-			mod_str = F("%q @%04x %v", name_str, begin, m)
-		}
-	}
-	L("Process %x %s %s @%x: id=%x pid=%x sid=%x cid=%x module=%s", B(a+sym.P_PID), queue, currency, a, B(a+sym.P_ID), B(a+sym.P_PID), B(a+sym.P_SID), B(a+sym.P_CID), mod_str)
-
-	L("   sp=%x task=%x PagCnt=%x User=%x Pri=%x Age=%x State=%x",
-		W(a+sym.P_SP), B(a+sym.P_Task), B(a+sym.P_PagCnt), W(a+sym.P_User), B(a+sym.P_Prior), B(a+sym.P_Age), B(a+sym.P_State))
-
-	L("   Queue=%x IOQP=%x IOQN=%x Signal=%x SigVec=%x SigDat=%x",
-		W(a+sym.P_Queue), B(a+sym.P_IOQP), B(a+sym.P_IOQN), B(a+sym.P_Signal), B(a+sym.P_SigVec), B(a+sym.P_SigDat))
-	L("   DIO %x %x %x  %x %x %x  PATH %x %x %x %x  %x %x %x %x  %x %x %x %x  %x %x %x %x",
-		W(a+sym.P_DIO), W(a+sym.P_DIO+2), W(a+sym.P_DIO+4),
-		W(a+sym.P_DIO+6), W(a+sym.P_DIO+8), W(a+sym.P_DIO+10),
-		B(a+sym.P_Path+0), B(a+sym.P_Path+1), B(a+sym.P_Path+2), B(a+sym.P_Path+3),
-		B(a+sym.P_Path+4), B(a+sym.P_Path+5), B(a+sym.P_Path+6), B(a+sym.P_Path+7),
-		B(a+sym.P_Path+8), B(a+sym.P_Path+9), B(a+sym.P_Path+10), B(a+sym.P_Path+11),
-		B(a+sym.P_Path+12), B(a+sym.P_Path+13), B(a+sym.P_Path+14), B(a+sym.P_Path+15))
-
-	if paranoid {
-		if B(a+sym.P_ID) > 10 {
-			panic("P_ID")
-		}
-		if B(a+sym.P_PID) > 10 {
-			panic("P_PID")
-		}
-		if B(a+sym.P_SID) > 10 {
-			panic("P_SID")
-		}
-		if B(a+sym.P_CID) > 10 {
-			panic("P_CID")
-		}
-		if W(a+sym.P_User) > 10 {
-			panic("P_User")
-		}
-	}
-
-	if followQ && W(a+sym.P_Queue) != 0 && queue != "Current" {
-		DoDumpProcDesc(W(a+sym.P_Queue), queue, followQ)
-	}
-
-	// }
-	// }
 }
 func MemoryModuleOf(addr Word) (name string, offset Word) {
 	// TODO -- cache current regions.
@@ -343,7 +346,7 @@ func MemoryModules() {
 	})
 }
 func PrettyDumpHex64(addr Word, size uint) {
-	L(";")
+	// L(";")
 	const PERLINE = 64
 	var p Word
 	for k := uint(0); k < size; k += PERLINE {
@@ -386,7 +389,7 @@ func PrettyDumpHex64(addr Word, size uint) {
 		}
 		L("%s", buf.String())
 	}
-	L(";")
+	// L(";")
 }
 
 func DoDumpProcsAndPaths() {
@@ -439,8 +442,8 @@ func DoDumpPaths() {
 					continue
 				} // Skip directory slot.
 				pth := p + j*64
-				Logp("e=%x j=%x PATH=%x pth=%x", e, j, i, pth)
 				if PeekB(pth) == byte(i) {
+					// Logp("e=%x j=%x PATH=%x pth=%x", e, j, i, pth)
 					DoDumpPath(i, pth)
 					PrettyDumpHex64(pth, 64)
 				}
@@ -467,10 +470,19 @@ func DoDumpPath(i Word, pth Word) {
 	   PDSIZE         EQU       .
 	*/
 	Logp("PATH[%d] at $%x", i, pth)
-	Logp("  mode %x count %x dev/dte %x cur_proc %x regs %x buf %x type %x",
+	var mod_name string
+	dte := PeekW(pth + sym.PD_DEV)
+	if dte != 0 {
+		descriptorMod := PeekW(dte + 4)
+		if descriptorMod != 0 {
+			mod_name = ModuleName(descriptorMod)
+		}
+	}
+	Logp("  mode %x count %x dev %x %q cur_proc %x regs %x buf %x type %x",
 		PeekB(pth+sym.PD_MOD),
 		PeekB(pth+sym.PD_CNT),
-		PeekW(pth+sym.PD_DEV),
+		dte,
+		mod_name,
 		PeekB(pth+sym.PD_CPR),
 		PeekW(pth+sym.PD_RGS),
 		PeekW(pth+sym.PD_BUF),
@@ -541,6 +553,9 @@ func DoDumpDevices() {
 		count := PeekB(p + 8)
 		if descriptorMod != 0 {
 			Logp("   [%x] p=%x %q=desc=%x %q=driv=%x %q=mgr=%x store=%x count=%x", i, p, ModuleName(descriptorMod), descriptorMod, ModuleName(driverMod), driverMod, ModuleName(managerMod), managerMod, staticStorage, count)
+			if staticStorage != 0 {
+				PrettyDumpHex64(staticStorage, 0x100)
+			}
 		}
 	}
 	Logp(";;")
