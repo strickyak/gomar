@@ -213,6 +213,9 @@ func DoDumpProcDesc(a Word, queue string, followQ bool) {
 		// }
 	}
 }
+
+var KrnMod *ModuleFound
+
 func MemoryModuleOf(addr Word) (name string, offset Word) {
 	// TODO -- cache current regions.
 
@@ -224,6 +227,17 @@ func MemoryModuleOf(addr Word) (name string, offset Word) {
 		log.Panicf("PC in IO page: $%x", addr)
 	}
 	if addr >= 0xFE00 {
+		if KrnMod == nil {
+			for _, m := range InitialModules {
+				if m.Addr == 0x7F000 { // Location of `Krn`
+					KrnMod = m
+				}
+			}
+		}
+		if KrnMod != nil {
+			return KrnMod.Id(), (addr & 0x1FFF) - Word(KrnMod.Addr&0x1FFF)
+		}
+		// If `Krn` not found
 		return "(tramp)", addr
 	}
 	if addr < 0x0100 {
