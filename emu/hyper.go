@@ -99,7 +99,7 @@ func PrintHyper(var_ptr Word) {
 			kind := format[i]
 			switch kind {
 			case 'c':
-				bb.WriteString(fmt.Sprintf("%c", PeekW(var_ptr)))
+				bb.WriteString(fmt.Sprintf("%c", PeekB(var_ptr+1)))
 			case 'x':
 				bb.WriteString(fmt.Sprintf("$%04x", PeekW(var_ptr)))
 			case 'd':
