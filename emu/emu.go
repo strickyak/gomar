@@ -202,7 +202,10 @@ func FatalCoreDump() {
 }
 
 func TfrReg(b byte) EA {
-	if 6 == b || b == 7 || b > 11 {
+	if 6 == b {
+		log.Printf("Interesting.  TfrReg is 6.  Axiom checks for 6309?  Will use D reg.")
+    return DRegEA
+  } else if b == 7 || b > 11 {
 		log.Panicf("Bad TfrReg byte: 0x%x", b)
 	}
 	return DRegEA + EA(b)
