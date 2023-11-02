@@ -806,17 +806,19 @@ func IsTermPath(path byte) bool {
 
 		var pdPage Word
 		if kpath > 3 {
-			pdPage = PeekW(pathDBT + 2*(Word(kpath)>>2))
+			// no // pdPage = PeekW(pathDBT + 2*(Word(kpath)>>2))  // Use indirect DBT page.
+      // wait -- shouldnt we just peek the high byte?
+			pdPage = Word(PeekB(pathDBT + (Word(kpath)>>2)))<<8  // Use indirect DBT page.
 		} else {
-			pdPage = pathDBT
+			pdPage = pathDBT  // Use main DBT page.
 		}
-		if pdPage != 0 {
+		if pdPage != 0 { // this should always be true.
 			pd := pdPage + 64*(Word(kpath)&3)
 			dev := PeekW(pd + sym.PD_DEV)
 			desc := PeekW(dev + sym.V_DESC)
 			name := ModuleName(desc)
 			_ = procID
-			// fmt.Printf("<<< #%d %x.t%x.p%x/kpath=%x/dbt=%x/page=%x/pd=%x/dev=%x/desc=%x/name=%s>>>", Cycles, procID, task, path, kpath, pathDBT, pdPage, pd, dev, desc, name)
+			// fmt.Printf("<<< #%d %x.t%x.p%x/kpath=%x/dbt=%x/page=%x/pd=%x/dev=%x/desc=%x/name=%s>>>\n", Cycles, procID, task, path, kpath, pathDBT, pdPage, pd, dev, desc, name) // yak
 			if (pdPage & 255) != 0 {
 				// CoreDump(fmt.Sprintf("/tmp/core#%d", Cycles))
 			}
