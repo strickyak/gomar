@@ -226,7 +226,7 @@ func PutIOByteI(a Word, b byte) {
 		0xFF01,
 		0xFF03:
 		if a == 0xFF03 && b == 0x80 { // Enabling the Frame Sync IRQ? ???
-			*FlagTraceAfter = 1 // Enable trace TODO ddt
+			// *FlagTraceAfter = 1 // Enable trace TODO ddt
 		}
 		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
 		return

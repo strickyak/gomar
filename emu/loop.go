@@ -217,7 +217,7 @@ func Main() {
 		// Process instruction
 		instructionTable[ireg]()
 
-		if true || Cycles >= *FlagTraceAfter {
+		if Cycles >= *FlagTraceAfter {
 			Trace()
 		}
 

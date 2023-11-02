@@ -80,7 +80,7 @@ func Trace() {
 	if module != "" {
 		moduleLower := strings.ToLower(module)
 		text = listings.Lookup(moduleLower, uint(offset), func() {
-			*FlagTraceAfter = 1
+			// TODO -- why??? // *FlagTraceAfter = 1
 		})
 	}
 
