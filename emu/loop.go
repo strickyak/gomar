@@ -350,17 +350,17 @@ func swi() {
 		if Level == 2 && MmuTask != 0 {
 			luser = 1
 		}
-    moduleName := ""
-    if luser==1 {
-		  pmodul := W0(proc + sym.P_PModul)
-		  moduleName = Os9String(pmodul + W(pmodul+4))
-    }
+		moduleName := ""
+		if luser == 1 {
+			pmodul := W0(proc + sym.P_PModul)
+			moduleName = Os9String(pmodul + W(pmodul+4))
+		}
 
-    if moduleName != "" {
-		  L("{proc=%x%q} OS9KERNEL%d: %s", pid, moduleName, luser, describe)
-    } else {
-		  L("{proc=%x} OS9KERNEL%d: %s", pid, luser, describe)
-    }
+		if moduleName != "" {
+			L("{proc=%x%q} OS9KERNEL%d: %s", pid, moduleName, luser, describe)
+		} else {
+			L("{proc=%x} OS9KERNEL%d: %s", pid, luser, describe)
+		}
 
 		L("\tregs: %s", Regs())
 		L("\t%s", ExplainMMU())

@@ -807,10 +807,10 @@ func IsTermPath(path byte) bool {
 		var pdPage Word
 		if kpath > 3 {
 			// no // pdPage = PeekW(pathDBT + 2*(Word(kpath)>>2))  // Use indirect DBT page.
-      // wait -- shouldnt we just peek the high byte?
-			pdPage = Word(PeekB(pathDBT + (Word(kpath)>>2)))<<8  // Use indirect DBT page.
+			// wait -- shouldnt we just peek the high byte?
+			pdPage = Word(PeekB(pathDBT+(Word(kpath)>>2))) << 8 // Use indirect DBT page.
 		} else {
-			pdPage = pathDBT  // Use main DBT page.
+			pdPage = pathDBT // Use main DBT page.
 		}
 		if pdPage != 0 { // this should always be true.
 			pd := pdPage + 64*(Word(kpath)&3)

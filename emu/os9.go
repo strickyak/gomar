@@ -618,38 +618,38 @@ func Os9StringPhys(addr int) string {
 }
 
 func PrintableStringThruEOS(a Word, max Word) string {
-  result := ""
+	result := ""
 
-  // It turns out that WritLn needs to get the buffer from User Task.
-  // I didn't realize that, at first.
-  WithMmuTask(1, func() {
+	// It turns out that WritLn needs to get the buffer from User Task.
+	// I didn't realize that, at first.
+	WithMmuTask(1, func() {
 
-	var buf bytes.Buffer
-	//debug// Z(&buf, " [ %04x/%04x:%x: ", a, max, MmuTask) // yak
-	//debug// for i := Word(0); i < max; i++ {
-	  //debug// Z(&buf, "%02x~", PeekB(a + i)) // yak
-  //debug// }
+		var buf bytes.Buffer
+		//debug// Z(&buf, " [ %04x/%04x:%x: ", a, max, MmuTask) // yak
+		//debug// for i := Word(0); i < max; i++ {
+		//debug// Z(&buf, "%02x~", PeekB(a + i)) // yak
+		//debug// }
 
-	for i := Word(0); i < max; i++ {
-		ch := PeekB(a + i)
-		if 32 <= ch && ch < 127 {
-			buf.WriteByte(ch)
-		} else if ch == '\n' || ch == '\r' {
-			buf.WriteByte('\n')
-		} else if ch == 0 {
-			break
-		} else {
-			Z(&buf, "{%d}", ch)
+		for i := Word(0); i < max; i++ {
+			ch := PeekB(a + i)
+			if 32 <= ch && ch < 127 {
+				buf.WriteByte(ch)
+			} else if ch == '\n' || ch == '\r' {
+				buf.WriteByte('\n')
+			} else if ch == 0 {
+				break
+			} else {
+				Z(&buf, "{%d}", ch)
+			}
+			if ch == '\r' {
+				break
+			}
 		}
-		if ch == '\r' {
-			break
-		}
-	}
-	//debug// Z(&buf, " ] ") // yak
-	result = buf.String()
+		//debug// Z(&buf, " ] ") // yak
+		result = buf.String()
 
-  })
-  return result
+	})
+	return result
 }
 
 func StrungMemory(a Word, max Word) string {
@@ -661,25 +661,25 @@ func StrungMemory(a Word, max Word) string {
 }
 
 func PrintableMemory(a Word, max Word) string {
-  result := ""
+	result := ""
 
-  WithMmuTask(1, func() {
+	WithMmuTask(1, func() {
 
-	var buf bytes.Buffer
-	for i := Word(0); i < yreg && i < max; i++ {
-		ch := PeekB(a + i)
-		if 32 <= ch && ch < 127 {
-			buf.WriteByte(ch)
-		} else if ch == '\n' || ch == '\r' {
-			buf.WriteByte('\n')
-		} else {
-			fmt.Fprintf(&buf, "{%d}", ch)
+		var buf bytes.Buffer
+		for i := Word(0); i < yreg && i < max; i++ {
+			ch := PeekB(a + i)
+			if 32 <= ch && ch < 127 {
+				buf.WriteByte(ch)
+			} else if ch == '\n' || ch == '\r' {
+				buf.WriteByte('\n')
+			} else {
+				fmt.Fprintf(&buf, "{%d}", ch)
+			}
 		}
-	}
-	result = buf.String()
+		result = buf.String()
 
-  })
-  return result
+	})
+	return result
 }
 
 func ModuleName(module_loc Word) string {
