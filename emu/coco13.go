@@ -405,6 +405,8 @@ func PutIOByteI(a Word, b byte) {
 		Logd("Write to $FFE8")
 	case 0xFF51:
 		Logd("Write to $FF51")
+	case 0xFF56:
+		Logd("tinyide: head = %02x", b)
 
 		/* VDG */
 	case 0xFFC0:

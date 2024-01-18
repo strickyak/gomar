@@ -9,10 +9,13 @@ import (
 	"github.com/strickyak/gomar/sym"
 
 	"bytes"
+	"flag"
 	"fmt"
 	"log"
 	"strings"
 )
+
+var FuzixModelFlag = flag.Bool("fuzix", false, "special for fuxiz")
 
 const TraceMem = false // TODO: restore this some day.
 
@@ -61,12 +64,20 @@ func InitializeMemoryMap() {
 }
 
 func Coco3ContractRaw() {
-	DisabledMmuMap = []byte{0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f}
+	if *FuzixModelFlag {
+		DisabledMmuMap = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
+	} else {
+		DisabledMmuMap = []byte{0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f}
+	}
 	InitializeMemoryMap()
 }
 
 func Coco3ContractForDos() {
-	DisabledMmuMap = []byte{0x00, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f}
+	if *FuzixModelFlag {
+		DisabledMmuMap = []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07}
+	} else {
+		DisabledMmuMap = []byte{0x00, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f}
+	}
 	InitializeMemoryMap()
 
 	// Initialize physical block 3b to spaces, except 0x0008 at the beginning.
@@ -95,6 +106,9 @@ func Coco3ContractForDos() {
 	for i, b := range []byte{0x6c, 0, 0, 0, 9, 0, 0, 0, 3, 0x20, 0, 0, 0, 0x3c, 1, 0} {
 		PutIOByte(Word(0xFF90+i), b)
 		// DONT // mem[0x90+i] = b // Probably don't need to set the mirror, but doing it anyway.
+	}
+	if *FuzixModelFlag {
+		PutIOByte(0xFF91, 0x01)  // BOOT sets task 1
 	}
 }
 

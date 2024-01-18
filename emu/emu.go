@@ -34,12 +34,15 @@ var FlagClock = flag.Int64("clock", 5*1000*1000, "")
 var FlagBasicText = flag.Bool("basic_text", false, "")
 var FlagUserResetVector = flag.Bool("use_reset_vector", false, "")
 var FlagQuotedTerminal = flag.Bool("quoted_terminal", false, "quote terminal output for debugging")
+var FlagBracketTerminal = flag.Bool("bracket_terminal", false, "brackets around terminal output for debugging")
 
 var FlagWatch = flag.String("watch", "", "Sequence of module:addr:reg:message,...")
 var FlagTriggerPc = flag.Uint64("trigger_pc", 0xC00D, "")
 var FlagTriggerOp = flag.Uint64("trigger_op", 0x17, "")
 var FlagTraceOnOS9 = flag.String("trigger_os9", "", "")
 var RegexpTraceOnOS9 *regexp.Regexp
+
+var FlagExpect = flag.String("expect", "", "fragments to expect, in order, separated by semicolons")
 
 type Watch struct {
 	Where    string

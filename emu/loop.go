@@ -22,6 +22,7 @@ var FlagTraceVerbosity = flag.String("vv", "", "Trace verbosity chars") // Trace
 var FlagTraceAfter = flag.Int64("t", MaxInt64, "Tracing starts after this many steps")
 
 func Main() {
+	InitExpectations()
 	CompileWatches()
 	SetVerbosityBits(*FlagInitialVerbosity)
 	InitHardware()
@@ -111,7 +112,7 @@ func Main() {
 		// but I started using it in the early days, and haven't switched away yet.
 		boot, err := ioutil.ReadFile(*FlagBootImageFilename)
 		if err != nil {
-			log.Fatalf("Cannot read boot image: %q: %v", *FlagDiskImageFilename, err)
+			log.Fatalf("Cannot read boot image: %q: %v", *FlagBootImageFilename, err)
 		}
 		L("boot mem size: %x", len(boot))
 		for i, b := range boot {
@@ -225,6 +226,10 @@ func Main() {
 			ParanoidAsserts()
 		}
 	} /* next step */
+
+	if Expectations != nil {
+		log.Fatalf("\n===@=== UNMET EXPECTATIONS: %#v\n", Expectations)
+	}
 
 	if max > 0 {
 		if Cycles >= max {

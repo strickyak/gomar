@@ -10,12 +10,12 @@ import (
 	//"flag"
 	"fmt"
 	//"io/ioutil"
-	//"log"
-	//"os"
+	"log"
+	"os"
 	//"regexp"
 	//"sort"
 	//"strconv"
-	//"strings"
+	"strings"
 )
 
 var _ = Log
@@ -694,6 +694,31 @@ func Regs() string {
 	return buf.String()
 }
 
+var Expectations []string
+
+func InitExpectations() {
+	if *FlagExpect != "" && Expectations == nil {
+		Expectations = strings.Split(*FlagExpect, ";")
+		fmt.Printf("\n===@=== SET Expectations: %q\n", *FlagExpect)
+		log.Printf("\n===@=== SET Expectations: %q\n", *FlagExpect)
+	}
+}
+
+func CheckExpectation(got string) {
+	if len(Expectations) > 0 {
+		if strings.Contains(got, Expectations[0]) {
+			fmt.Printf("\n===@=== GOT Expectation: %q\n", Expectations[0])
+			log.Printf("\n===@=== GOT Expectation: %q\n", Expectations[0])
+			Expectations = Expectations[1:]
+			if len(Expectations) == 0 {
+				fmt.Printf("\n===@=== SUCCESS -- FINISHED Expectations.\n")
+				log.Printf("\n===@=== SUCCESS -- FINISHED Expectations.\n")
+				os.Exit(0)
+			}
+		}
+	}
+}
+
 // Returns a string and whether this operation typically returns to caller.
 func DecodeOs9Opcode(b byte) (string, bool) {
 	// MemoryModules()
@@ -931,9 +956,12 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 			p = PrintableMemory(xreg, yreg)
 			if *FlagQuotedTerminal {
 				fmt.Printf("[%q]", StrungMemory(xreg, yreg))
+			} else if *FlagBracketTerminal {
+				fmt.Printf("[%s]", StrungMemory(xreg, yreg))
 			} else {
 				fmt.Printf("%s", p)
 			}
+			CheckExpectation(p)
 		}
 
 	case 0x8B:
@@ -947,9 +975,12 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 				str := PrintableStringThruEOS(xreg, yreg)
 				if *FlagQuotedTerminal {
 					fmt.Printf("%q ", str)
+				} else if *FlagBracketTerminal {
+					fmt.Printf("{%s}", str)
 				} else {
 					fmt.Printf("%s", str)
 				}
+				CheckExpectation(str)
 			}
 		}
 
