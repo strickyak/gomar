@@ -108,7 +108,7 @@ func Coco3ContractForDos() {
 		// DONT // mem[0x90+i] = b // Probably don't need to set the mirror, but doing it anyway.
 	}
 	if *FuzixModelFlag {
-		PutIOByte(0xFF91, 0x01)  // BOOT sets task 1
+		PutIOByte(0xFF91, 0x01) // BOOT sets task 1
 	}
 }
 
@@ -840,4 +840,13 @@ func IsTermPath(path byte) bool {
 		}
 	})
 	return isTerm
+}
+
+func InitializeVectors() {
+	PutW(0xFFF2, 0xFEEE) // SWI3
+	PutW(0xFFF4, 0xFEF1) // SWI2
+	PutW(0xFFFA, 0xFEFA) // SWI
+	PutW(0xFFFC, 0xFEFD) // NMI
+	PutW(0xFFF8, 0xFEF7) // IRQ
+	PutW(0xFFF6, 0xFEF4) // FIRQ
 }

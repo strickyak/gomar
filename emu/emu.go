@@ -22,13 +22,14 @@ import (
 
 var FlagTerm = flag.String("term", "Term", "name of terminal device")
 var FlagLinkerMapFilename = flag.String("map", "", "")
-var FlagBootImageFilename = flag.String("boot", "", "")
+
+// var FlagBootImageFilename = flag.String("boot", "", "")
 var FlagLoadmFilename = flag.String("loadm", "", "")
 var FlagCartFilename = flag.String("cart", "", "")
 var FlagRom8000Filename = flag.String("rom_8000", "", "")
 var FlagRomA000Filename = flag.String("rom_a000", "", "")
 var FlagKernelFilename = flag.String("kernel", "", "")
-var FlagDiskImageFilename = flag.String("disk", "../_disk_", "")
+var FlagDiskImageFilename = flag.String("disk", "", "OS9 formatted disk image")
 var FlagMaxSteps = flag.Int64("max", 0, "")
 var FlagClock = flag.Int64("clock", 5*1000*1000, "")
 var FlagBasicText = flag.Bool("basic_text", false, "")

@@ -126,3 +126,12 @@ func PeekWWithTask(addr Word, task byte) Word {
 func PeekBWithTask(addr Word, task byte) byte {
 	return PeekB(addr)
 }
+
+func InitializeVectors() {
+	PutW(0xFFF2, 0x0100) // SWI3
+	PutW(0xFFF4, 0x0103) // SWI2
+	PutW(0xFFFA, 0x0106) // SWI
+	PutW(0xFFFC, 0x0109) // NMI
+	PutW(0xFFF8, 0x010C) // IRQ
+	PutW(0xFFF6, 0x010F) // FIRQ
+}

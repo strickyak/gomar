@@ -499,12 +499,8 @@ func bsr() {
 func neg() {
 	var a, r Word
 
-	{
-		t := W(pcreg)
-		if t == 0 {
-			log.Panicf("Executing 0000 instruction at pcreg=%04x", pcreg-1)
-			// log.Printf("Warning: Executing 0000 instruction at pcreg=%04x", pcreg-1)
-		}
+	if B(pcreg) == 0 {
+		log.Panicf("Executing $00$00 instruction at pcreg=%04x", pcreg-1)
 	}
 
 	a = 0

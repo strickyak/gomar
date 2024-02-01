@@ -52,7 +52,8 @@ func MappedAddressInRomSpace(addr Word, mapped int) bool {
 }
 
 func AddressInDeviceSpace(addr Word) bool {
-	return (addr&0xFF00) == 0xFF00 && (addr&0xFFF0) != 0xFFF0
+	// return (addr&0xFF00) == 0xFF00 && (addr&0xFFF0) != 0xFFF0
+	return 0xFF00 <= addr && addr < 0xFFF0
 }
 
 func GetIOByte(a Word) byte {
@@ -211,6 +212,11 @@ func PutIOByteI(a Word, b byte) {
 
 	if 0xFF00 <= a && a <= 0xFF40 {
 		a &^= 0x003C // Wipe out the don't-care bits of PIAs.
+	}
+
+	if 0xFFE0 <= a {
+		Logd("PutIOByte: WUT GIMEX !? : $%04x", a)
+		return
 	}
 
 	switch a {
@@ -646,17 +652,22 @@ func ScanRamForOs9Modules() []*ModuleFound {
 	var z []*ModuleFound
 	for i := 256; i < len(mem)-256; i++ {
 		if mem[i] == 0x87 && mem[i+1] == 0xCD {
+
 			parity := byte(255)
+			// var buf bytes.Buffer
 			for j := 0; j < 9; j++ {
 				parity ^= mem[i+j]
+				// fmt.Fprintf(&buf, " %02x", mem[i+j])
 			}
+			// log.Printf("  for parity: %s", buf.String())
+
 			if parity == 0 {
 				sz := int(HiLo(mem[i+2], mem[i+3]))
 				nameAddr := i + int(HiLo(mem[i+4], mem[i+5]))
 				got := uint32(HiMidLo(mem[i+sz-3], mem[i+sz-2], mem[i+sz-1]))
 				crc := 0xFFFFFF ^ Os9CRC(mem[i:i+sz])
 				if got == crc {
-					log.Printf("SCAN (at $%x sz $%x) %q %06x %06x", i, sz, Os9StringPhys(nameAddr), mem[i+sz-3:i+sz], 0xFFFFFF^Os9CRC(mem[i:i+sz]))
+					log.Printf("SCAN (at $%x to $%x sz $%x) %q %06x %06x", i, i+sz, sz, Os9StringPhys(nameAddr), mem[i+sz-3:i+sz], 0xFFFFFF^Os9CRC(mem[i:i+sz]))
 					z = append(z, &ModuleFound{
 						Addr: uint32(i),
 						Len:  uint32(sz),

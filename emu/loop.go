@@ -32,14 +32,17 @@ func Main() {
 	//NODISPLAY// CocodChan := make(chan *display.CocoDisplayParams, 50)
 	//NODISPLAY// Disp = display.NewDisplay(mem[:], 80, 25, CocodChan, keystrokes, &sam, PeekBWithInt)
 
+	// LoadBootImage()
+
 	Logd("(begin roms)")
-	if *FlagBootImageFilename != "" {
+
+	if *FlagDiskImageFilename != "" {
 		{
 			// TODO: this code is duplicated????? Search for FlagBootImageFilename and find the other one.
 			// Open disk image.
 			fd, err := os.OpenFile(*FlagDiskImageFilename, os.O_RDWR, 0644)
 			if err != nil {
-				log.Fatalf("Cannot open disk image: %q: %v", *FlagBootImageFilename, err)
+				log.Fatalf("Cannot open disk image: %q: %v", *FlagDiskImageFilename, err)
 			}
 			disk_fd = fd
 		}
@@ -105,42 +108,52 @@ func Main() {
 		sreg = 0x8000
 	}
 
-	if *FlagBootImageFilename != "" {
-		// Loading a binary file skipping the first 256 bytes of RAM
-		// and starting pcreg of 0x100 was a convention from the sbc09.c code.
-		// This is probably not the right thing for a coco emulator,
-		// but I started using it in the early days, and haven't switched away yet.
-		boot, err := ioutil.ReadFile(*FlagBootImageFilename)
-		if err != nil {
-			log.Fatalf("Cannot read boot image: %q: %v", *FlagBootImageFilename, err)
+	/*
+		if *FlagBootImageFilename != "" {
+			// Loading a binary file skipping the first 256 bytes of RAM
+			// and starting pcreg of 0x100 was a convention from the sbc09.c code.
+			// This is probably not the right thing for a coco emulator,
+			// but I started using it in the early days, and haven't switched away yet.
+			boot, err := ioutil.ReadFile(*FlagBootImageFilename)
+			if err != nil {
+				log.Fatalf("Cannot read boot image: %q: %v", *FlagBootImageFilename, err)
+			}
+			L("boot mem size: %x", len(boot))
+			for i, b := range boot {
+				PokeB(Word(i+0x100), b)
+			}
+			pcreg = 0x100
+			DumpAllMemory()
+		} else if *FlagKernelFilename != "" {
+			kernel, err := ioutil.ReadFile(*FlagKernelFilename)
+			if err != nil {
+				log.Fatalf("Cannot read kernel image: %q: %v", *FlagKernelFilename, err)
+			}
+			if kernel[0] != 'O' || kernel[1] != 'S' {
+				log.Fatalf("--kernel does not begin with OS")
+			}
+			L("kernel mem size: %x", len(kernel))
+			for i, b := range kernel {
+				PokeB(Word(i+0x2600), b)
+			}
+			PutW(0xFFF2, 0xFEEE) // SWI3
+			PutW(0xFFF4, 0xFEF1) // SWI2
+			PutW(0xFFFA, 0xFEFA) // SWI
+			PutW(0xFFFC, 0xFEFD) // NMI
+			PutW(0xFFF8, 0xFEF7) // IRQ
+			PutW(0xFFF6, 0xFEF4) // FIRQ
+			pcreg = 0x2602
+			DumpAllMemory()
 		}
-		L("boot mem size: %x", len(boot))
-		for i, b := range boot {
-			PokeB(Word(i+0x100), b)
-		}
-		pcreg = 0x100
-		DumpAllMemory()
-	} else if *FlagKernelFilename != "" {
-		kernel, err := ioutil.ReadFile(*FlagKernelFilename)
-		if err != nil {
-			log.Fatalf("Cannot read kernel image: %q: %v", *FlagKernelFilename, err)
-		}
-		if kernel[0] != 'O' || kernel[1] != 'S' {
-			log.Fatalf("--kernel does not begin with OS")
-		}
-		L("kernel mem size: %x", len(kernel))
-		for i, b := range kernel {
-			PokeB(Word(i+0x2600), b)
-		}
-		PutW(0xFFF2, 0xFEEE) // SWI3
-		PutW(0xFFF4, 0xFEF1) // SWI2
-		PutW(0xFFFA, 0xFEFA) // SWI
-		PutW(0xFFFC, 0xFEFD) // NMI
-		PutW(0xFFF8, 0xFEF7) // IRQ
-		PutW(0xFFF6, 0xFEF4) // FIRQ
-		pcreg = 0x2602
-		DumpAllMemory()
-	}
+	*/
+
+	// if LoadBootImage() {
+	// AssertEQ(PeekB(0x2600), 'O')
+	// AssertEQ(PeekB(0x2601), 'S')
+	// pcreg = 0x2602
+	// }
+
+	InitializeVectors() // for coco1 or coco3
 
 	if *FlagUserResetVector {
 		pcreg = PeekW(0xFFFE)
@@ -156,7 +169,7 @@ func Main() {
 		log.Fatalf("Before run, pcreg is still 0")
 	}
 
-	sreg = 0
+	sreg = 0x8000
 	dpreg = 0
 	iflag = 0
 

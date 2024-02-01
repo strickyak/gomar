@@ -23,6 +23,23 @@ func MemoryModuleOf(addr Word) (string, Word) {
 	start := W(0x26)
 	limit := W(0x28)
 
+	for _, e := range InitialModules {
+		/*
+		   type ModuleFound struct {
+		           Addr uint32
+		           Len  uint32
+		           CRC  uint32
+		           Name string
+		   }
+		*/
+		mod := Word(e.Addr)
+		size := Word(e.Addr + e.Len)
+		if mod <= addr && addr < mod+size {
+			h1, h2, h3 := B(mod+size-3), B(mod+size-2), B(mod+size-1)
+			return F("%s.%04x%02x%02x%02x", e.Name, size, h1, h2, h3), addr - mod
+		}
+	}
+
 	if start != 0x300 || limit != 0x400 {
 		return "NOTYET", addr
 	}
