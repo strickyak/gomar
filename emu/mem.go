@@ -273,3 +273,70 @@ func Loadm(loadm []byte) Word {
 func PeekBWithInt(addr int) byte {
 	return PeekB(Word(addr))
 }
+
+/*
+Two Megabits and Beyond:
+
+[9:40 AM]t3chD0c: I have a 64K CoCo2 with a socketed 6809, and an available 6309 CPU I could swap in. Is it worth it, or should I save the 6309 for my CoCo3 - once I get the guts to desolder the original CPU off the motherboard 😬
+[9:59 AM]Ciaran: anyone know offhand how >2MB works on a coco3?  Richard Goedeken's stress tester seems to set the top 4 bits of $FF9B and i assume what that's doing is providing extra bits whenever there's a write to the bank registers?
+[10:00 AM]Ciaran: other sources suggest the lowest 2 (but i guess more where relevant) bits control which 512K bank the vram addresses end up (and that's what xroar does so far up to 2MB)
+[10:02 AM]Ciaran: are there any other subtleties than that?  e.g. could imagine only supporting >2MB for one of the tasks to save space
+[10:14 AM]Dave Philipsen: I say go ahead and use the 6309 in your CoCo 2. There are still plenty to be found.
+[10:16 AM]MDSiegel: I had assumed that without a substition of the GIME anything above 512 was banked
+[10:19 AM]Dave Philipsen: There are add ons, I believe, which will allow those extra two unused bits to be used while still using the original GIME.
+[10:21 AM]Dave Philipsen: Since the registers are write-only it’s a fairly simple matter to decode the FFA0-F addresses and mirror the GIME to provide the extra two bits for addressing up to 2MB.
+[10:54 AM]Ciaran: yeah up to 2MB is straightforward - the GIME doesn't use those top two bits when written, nor assert them when reading.  >2MB means using some other location.  i see $FF9B used, and i wonder if whatever you write there (bits 4 & 5) get used to supplement writes to the more usual bank register addresses
+[10:54 AM]Ciaran: probably a nitros-9 dev would know for sure @L. Curtis Boyle ? :)
+[10:56 AM]Ciaran: e.g. you write $10 to $FF9B, that doesn't change anything right away, but if you write $FF to $FFA0, it effectively makes the bank used for that address space $1FF
+[10:56 AM]Ciaran: i suppose i could just implement it that way, run nitros-9, see whether it reports > 2MB ;)
+[11:30 AM]Deek: The OS doesn't use >2MB at all
+[11:32 AM]Ciaran: ah right istr reading that - just sets it up as a ram disk?
+[11:32 AM]Ciaran: does EOU do that if detected, or is that something you have to do manually?
+[11:33 AM]Deek: There's a "NoCan" ramdisk driver that can be used
+[11:33 AM]Ciaran: hm, sounds like you need to know what you're doing
+[11:33 AM]Deek: I don't know how it keeps from swapping out its own code though
+[11:34 AM]Deek: Or if it needs to
+[11:34 AM]Ciaran: yeah that's why i assumed the above - that a write to that address is latched and then stored along with writes to the bank registers, not applied straight away
+[11:34 AM]Ciaran: couldn't imagine how else it could work
+[11:35 AM]Ciaran: unless you stored some trampoliney stuff in $FExx maybe
+[11:35 AM]Ciaran: but that sounds horrid
+[11:38 AM]Deek: In the NitrOS-9 repo, 3rdparty/drivers/nocan/rammer.asm
+[11:42 AM]Ciaran: reading that my first thought is "you do know a tab character takes as much space as a space character, right?"
+[11:44 AM]Ciaran: the second is that there are clearly at least two different ways this has been done
+[11:45 AM]Ciaran: yeah make that three different ways
+[11:46 AM]Ciaran: but it does seem to tally - ff9b or ff80 or ff70 is updated with appropriate bits, then the bank reg in ffax is written, then ff9b or ff80 or ff70 is rewritten with whatever it was before
+[11:48 AM]Ciaran: so unless the extended bank register is only affecting bank 0/task 0 (which is the bank the driver seems to play with), seems reasonable to assume it's just a latch that affects subsequent writes
+[11:49 AM]Deek: I am working on that
+[11:54 AM]Ciaran: heh, wasn't really blaming anyone, just going "jeez that's hard to read"
+[11:55 AM]Deek: I know, it's extremely wide, but that's what boisy went with.
+[11:57 AM]Deek: It will soon switch to the other extreme, with no extra spacing at all and a script that can be used to prettify it however you like.
+[11:57 AM]Ciaran: oh you know what i think we're looking at different things
+[11:57 AM]Ciaran: what i'm seeing is single space before the opcode
+[11:58 AM]Ciaran: because i checked this out $whoknowshowlong ago.  lemme do a pull...
+[11:58 AM]Ciaran: realises again it's not git
+[11:58 AM]Ciaran: checks to see what the bloody mercurial equivalents are
+[11:58 AM]Deek: Oh, then you're looking at how it was originally written.
+[12:00 PM]Ciaran: ok i've just remembered all the recent chatter about putting this in github
+[12:00 PM]Ciaran: as an hg pull -u didn't get anything (which is what the ever useful https://wiki.mercurial-scm.org/GitConcepts reminded me of ;)
+[12:01 PM]Deek: It will probably wind up (slightly) harder to read than you're seeing now, because the comments will get cuddled up too.
+[12:01 PM]Deek: Nocan set 1 0=64Meg Nocan 1=8Meg MESS and Nocan3 2=16Meg Collyer
+[12:02 PM]Ciaran: https://github.com/nitros9project/nitros9.git yeah?  not mikey's?
+[12:02 PM]Deek: Yes
+[12:03 PM]Ciaran: ok no that's much nicer formatting :)
+[12:03 PM]Ciaran: i personally stopped tabbing the operands, but that's just personal preference.  still readable.
+[12:04 PM]Deek: Once I'm done, setting up the clean and smudge filters and 'renormalizing' will get you 'preferred formatting'
+[12:09 PM]Ciaran: while i feel "spaces only, no tabs" to be a perverse inversion of moral correctitude, i'm unlikely to be editing nitros9 source any time soon
+[12:14 PM]L. Curtis Boyle: Here are the notes by Robert Gault and Paul Barton for when the NoCan3 was made:
+My Notes on NoCan3 & NoCan4 This 8MB interface is just an extension to the already existing 2MB interface.
+
+A 2MB interface is not needed, this board emulates the original 2MB interface.
+All 2MB bits work as before, no changes.
+
+For NitrOS-9 users, no changes are required to use the 2MB.
+Expand
+NoCan3_docs.txt
+3 KB
+[12:18 PM]Ciaran: excellent, cheers - that seems to confirm it.  top bits of FF9B are latched, used for later writes to FFAx.  lower bits of FF9B are used directly as bank for video.
+[12:18 PM]Ciaran: all sounds eminently implementable
+[12:19 PM]Ciaran: as for all the other approaches mentioned in that source - nocan64 and "collyer", i think i'll just ignore those
+*/
