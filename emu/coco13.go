@@ -25,7 +25,7 @@ var portMem [256]byte        // anything written to $FFxx
 var Pia0HorzSyncInterruptEnable bool  // 15738 Hz
 var Pia0FrameSyncInterruptEnable bool // 60 Hz
 var GimeHorzSyncInterruptEnable bool  // 15738 Hz
-var GimeVirtSyncInterruptEnable bool // 60 Hz
+var GimeVirtSyncInterruptEnable bool  // 60 Hz
 
 var horzCycles int64
 var frameCycles int64

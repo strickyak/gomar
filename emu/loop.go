@@ -24,7 +24,9 @@ var FlagTraceVerbosity = flag.String("vv", "", "Trace verbosity chars") // Trace
 var FlagTraceAfter = flag.Int64("t", MaxInt64, "Tracing starts after this many steps")
 
 var FlagVdgRate = flag.Int("vdg_rate", 10003, "how often to print text screen")
-var FlagKbdRate = flag.Int("kbd_rate", 100031, "how often to frob keyboard")
+
+// doubles in Os9 //  var FlagKbdRate = flag.Int("kbd_rate", 100031, "how often to frob keyboard")
+var FlagKbdRate = flag.Int("kbd_rate", 50031, "how often to frob keyboard")
 
 func Main() {
 	LoadRomListings()

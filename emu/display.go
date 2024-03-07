@@ -19,27 +19,7 @@ var MouseMutex sync.Mutex
 
 var display Screen
 
-type CocoDisplayParams struct {
-	BasicText           bool // 32x16 at 0x400
-	Gime                bool // else use VDG
-	Graphics            bool // else use Alpha
-	AttrsIfAlpha        bool // if every other byte is attrs
-	VirtOffsetAddr      int  // Start of data.
-	HorzOffsetAddr      int
-	VirtScroll          int
-	LinesPerField       int
-	LinesPerCharRow     int
-	Monochrome          bool
-	HRES                int
-	CRES                int
-	HVEN                bool
-	GraphicsBytesPerRow int
-	GraphicsColorBits   int
-	AlphaCharsPerRow    int
-	AlphaHasAttrs       bool
-	ColorMap            [16]byte
-}
-
+/*
 type Display struct {
 	Dirty   bool
 	Mem     []byte
@@ -53,6 +33,7 @@ type Display struct {
 	x, y    int
 	ctrl    bool
 }
+*/
 
 type Sam struct {
 	Fx        byte
