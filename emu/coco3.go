@@ -4,7 +4,6 @@
 package emu
 
 import (
-	"github.com/strickyak/gomar/display"
 	. "github.com/strickyak/gomar/gu"
 	"github.com/strickyak/gomar/sym"
 
@@ -19,7 +18,8 @@ var FuzixModelFlag = flag.Bool("fuzix", false, "special for fuxiz")
 
 const TraceMem = false // TODO: restore this some day.
 
-var GimeVertIrqEnable bool
+var Init0 byte
+var Init1 byte
 var MmuEnable bool
 var MmuTask byte
 var MmuMap [2][8]byte
@@ -32,28 +32,53 @@ var videoEpoch int64
 
 var DisabledMmuMap = []byte{0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f}
 
-////////////////////////////////////////
-
-func FireTimerInterrupt() {
-	if Level == 1 || GimeVertIrqEnable {
-		irqs_pending |= IRQ_PENDING
-		Waiting = false
+func UseExternalRomAssumingRom(addr Word) bool {
+	var z bool
+	if BitMC1 {
+		if 0xFFF0 <= addr {
+			z = false
+		} else if BitMC0 {
+			z = true
+		} else {
+			z = false
+		}
+	} else {
+		z = 0xC000 <= addr && addr < 0xFFF0
 	}
-	videoEpoch++
-	if videoEpoch%10 == 1 {
-		PublishVideoText()
+	//T("ext?addr,mc1,mc0", addr, BitMC1, BitMC0, "-->", z)
+	return z
+}
+func InternalRomOffset(addr Word) uint {
+	if 0xFFF0 <= addr {
+		return 0x3FFF & uint(addr)
+	}
+	if BitMC1 {
+		return 0x7FFF & uint(addr)
+	} else {
+		return 0x3FFF & uint(addr)
 	}
 }
+func ExternalRomOffset(addr Word) uint {
+	if BitMC1 {
+		return 0x7FFF & uint(addr)
+	} else {
+		return 0x4000 + 0x3FFF&uint(addr)
+	}
+}
+
+////////////////////////////////////////
 
 // Coco3Contract ensures the contract between Coco3's disk booting mechanism
 // and the OS/9 Level2 kernel, documented at
 // nitros9/level2/modules/kernel/ccbkrn.txt
 func InitHardware() {
+	display = NewGime()
 	if usedRom {
 		Coco3ContractRaw()
 	} else {
 		Coco3ContractForDos()
 	}
+	PutB(0xFF90, 0x80) // Start in VDG mode
 }
 func InitializeMemoryMap() {
 	for task := 0; task < 2; task++ {
@@ -206,7 +231,27 @@ func Os9StringWithMapping(addr Word, m Mapping) string {
 }
 
 func ExplainMMU() string {
-	return F("mmu:%d task:%d [[ %02x %02x %02x %02x  %02x %02x %02x %02x || %02x %02x %02x %02x  %02x %02x %02x %02x ]]",
+	romText := ""
+	if sam.TyAllRam {
+		romText += "AllRam, "
+	} else {
+		if BitFixedFExx {
+			romText += "stuckFExx, "
+		}
+		if BitMC1 {
+			if BitMC0 {
+				romText += "ROM=32kExt, "
+			} else {
+				romText += "ROM=32kInt, "
+			}
+		} else {
+			romText += "ROM=16kInt+16kExt, "
+		}
+	}
+	if sam.P1RamSwap != 0 {
+		romText += "RAM=Swapped32k32k, "
+	}
+	return F("mmu:%d task:%d [[ %02x %02x %02x %02x  %02x %02x %02x %02x || %02x %02x %02x %02x  %02x %02x %02x %02x ]] Init=%02x,%02x  %s  (%02x %02x %02x %02x  %02x %02x %02x %02x) (%02x %02x %02x %02x  %02x %02x %02x %02x)",
 		Cond(MmuEnable, 1, 0),
 		MmuTask&1,
 		MmuMap[0][0],
@@ -225,6 +270,27 @@ func ExplainMMU() string {
 		MmuMap[1][5],
 		MmuMap[1][6],
 		MmuMap[1][7],
+		Init0,
+		Init1,
+		romText,
+
+		portMem[0x90],
+		portMem[0x91],
+		portMem[0x92],
+		portMem[0x93],
+		portMem[0x94],
+		portMem[0x95],
+		portMem[0x96],
+		portMem[0x97],
+
+		portMem[0x98],
+		portMem[0x99],
+		portMem[0x9a],
+		portMem[0x9b],
+		portMem[0x9c],
+		portMem[0x9d],
+		portMem[0x9e],
+		portMem[0x9f],
 	)
 }
 
@@ -265,59 +331,63 @@ func B(addr Word) byte {
 
 	if AddressInDeviceSpace(addr) {
 		z = GetIOByte(addr)
-		Logd("GetIO (%06x) %04x -> %02x : %c %c", mapped, addr, z, H(z), T(z))
+		Logd("GetIO (%06x) %04x -> %02x : %c %c", mapped, addr, z, PrettyH(z), PrettyT(z))
 		mem[mapped] = z
 	} else {
 		z = PeekB(addr)
 	}
 	if TraceMem {
-		L("\t\t\t\tGetB (%06x) %04x -> %02x : %c %c", mapped, addr, z, H(z), T(z))
-	}
-	if addr >= 0xfff0 { // XXX
-		L("\t\t\t\tGetB (%06x) %04x -> %02x", mapped, addr, z)
-		L("\t\tAllRam=%v enableRom=%v inRomSpace=%v", sam.AllRam, enableRom, MappedAddressInRomSpace(addr, mapped))
+		L("\t\t\t\tGetB (%06x) %04x -> %02x : %c %c", mapped, addr, z, PrettyH(z), PrettyT(z))
 	}
 	return z
 }
 
 func PeekB(addr Word) byte {
 	var z byte
-	mapped := MapAddr(addr, true)
+	//T(Fmt("$%04x", addr))
 
-	if !sam.AllRam && enableRom && MappedAddressInRomSpace(addr, mapped) {
-		switch BitMC1 {
-		case false:
-			if mapped < (0x3E << 13) {
-				z = internalRom[mapped&0x3FFF]
-			} else {
-				z = cartRom[mapped&0x7FFF]
-			}
-		case true:
-			switch BitMC0 {
-			case false:
-				z = internalRom[mapped&0x7FFF]
-			case true:
-				z = cartRom[addr&0x7FFF]
-			}
+	if !sam.TyAllRam && AddressInRomSpace(addr) {
+		if UseExternalRomAssumingRom(addr) {
+			//T()
+			o := ExternalRomOffset(addr)
+			z = cartRom[o]
+		} else {
+			//T()
+			o := InternalRomOffset(addr)
+			z = internalRom[o]
 		}
 	} else {
+		//T()
+		// Not ROM so use RAM
+		mapped := MapAddr(addr, true)
 		z = mem[mapped]
+		//T("PeekB", Hex(addr), Hex(mapped), Hex(z))
 	}
+	//T(z)
 	return z
 }
 
 func PokeB(addr Word, x byte) {
-	mapped := MapAddr(addr, true)
-	if !sam.AllRam && enableRom && MappedAddressInRomSpace(addr, mapped) {
-		// cannot write ROM
-	} else {
-		mem[mapped] = x
+	if !sam.TyAllRam && AddressInRomSpace(addr) {
+		if addr < 0xFF00 {
+			log.Panicf("PokeB: write to ROM addr $%04x <- $%02x", addr, x)
+		}
 	}
+
+	mapped := MapAddr(addr, true)
+	mem[mapped] = x
 }
 
 // PutB is fundamental func to set byte.  Hack register access into here.
 func PutB(addr Word, x byte) {
+	if !sam.TyAllRam && AddressInRomSpace(addr) {
+		if addr < 0xFF00 {
+			log.Panicf("PutB: write to ROM addr $%04x <- $%02x", addr, x)
+		}
+	}
+
 	mapped := MapAddr(addr, false)
+	display.Poke(uint(addr), uint(mapped), x)
 
 	old := mem[mapped]
 	mem[mapped] = x
@@ -325,7 +395,7 @@ func PutB(addr Word, x byte) {
 		Logd("\t\t\t\tPutB (%06x) %04x <- %02x (was %02x)", mapped, addr, x, old)
 	}
 	if addr >= 0xfff0 { // XXX
-		L("\t\t\t\tPutB (%06x) %04x <- %02x (was %02x)", mapped, addr, x, old)
+		L("\t\t\t\tPutB VECTOR (%06x) %04x <- %02x (was %02x)", mapped, addr, x, old)
 	}
 	if AddressInDeviceSpace(addr) {
 		PutIOByte(addr, x)
@@ -572,12 +642,12 @@ var FF93Bits = []string{
 var GimeLinesPerField = []int{192, 200, 210, 225}
 var GimeLinesPerCharRow = []int{1, 2, 3, 8, 9, 10, 12, -1}
 
-func GetCocoDisplayParams() *display.CocoDisplayParams {
+func GetCocoDisplayParams() *CocoDisplayParams {
 	a := PeekB(0xFF98)
 	b := PeekB(0xFF99)
 	c := PeekB(0xFF9C)
 	d := PeekB(0xFF9F)
-	z := &display.CocoDisplayParams{
+	z := &CocoDisplayParams{
 		BasicText:       *FlagBasicText,
 		Gime:            true,
 		Graphics:        (a>>7)&1 != 0,
@@ -650,6 +720,30 @@ func DumpGimeStatus() {
 	L("GIME/GetCocoDisplayParams = %#v", *GetCocoDisplayParams())
 }
 
+func GetGimeIOByte(a Word) byte {
+	switch a {
+	case 0xFF92: /* GIME IRQ */
+		Logd("GIME -- Read FF92 (IRQ)")
+		var z byte
+
+		if gimeVirtPending {
+			z |= 0x08
+		}
+		gimeVirtPending = false
+
+		if gimeHorzPending {
+			z |= 0x10
+		}
+		gimeHorzPending = false
+
+		return z
+	//case 0xFF93: /* GIME FIRQ */
+		//Logd("GIME -- Read FF93 (FIRQ) NOT IMP")
+	}
+	log.Panicf("GetGimeIOByte %04x", a)
+	return 0  // NOTREACHED
+}
+
 func PutGimeIOByte(a Word, b byte) {
 	L("GIME %x <= %02x", a, b)
 	PokeB(a, b)
@@ -680,6 +774,7 @@ func PutGimeIOByte(a Word, b byte) {
 		L("GIME\t\t$%x: Cpu Speed <- %02x", a, b)
 
 	case 0xFF90:
+		Init0 = b
 		MmuEnable = 0 != (b & 0x40)
 		BitFixedFExx = 0 != (b & 0x08)
 		BitMC1 = 0 != (b & 0x02)
@@ -687,19 +782,22 @@ func PutGimeIOByte(a Word, b byte) {
 		L("GIME MmuEnable <- %v; MC=%d", MmuEnable, (b & 3))
 
 	case 0xFF91:
+		Init1 = b
 		MmuTask = b & 0x01
 		L("GIME MmuTask <- %v; clock rate <- %v", MmuTask, 0 != (b&0x40))
 
 	case 0xFF92:
 		L("GIME\t\tIRQ bits: %s", ExplainBits(b, FF92Bits))
 		// 0x08: Vertical IRQ.  0x01: Cartridge.
-		if (b &^ 0x09) != 0 {
-			log.Panicf("GIME IRQ Enable for unsupported emulated bits: %04x %02x", a, b)
-		}
 		if (b & 0x08) != 0 {
-			GimeVertIrqEnable = true
+			GimeVirtSyncInterruptEnable = true
 		} else {
-			GimeVertIrqEnable = false
+			GimeVirtSyncInterruptEnable = false
+		}
+		new_b := b &^ 0x08  // zap Virt bit
+		new_b &^= 0x01  // also zap Cart bit
+		if new_b != 0 {
+			log.Panicf("GIME IRQ Enable for unsupported emulated bits: %04x %02x", a, b)
 		}
 
 	case 0xFF93:
@@ -843,6 +941,7 @@ func IsTermPath(path byte) bool {
 }
 
 func InitializeVectors() {
+	panic("dont InitializeVectors")
 	PutW(0xFFF2, 0xFEEE) // SWI3
 	PutW(0xFFF4, 0xFEF1) // SWI2
 	PutW(0xFFFA, 0xFEFA) // SWI

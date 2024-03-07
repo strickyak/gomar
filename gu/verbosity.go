@@ -1,8 +1,12 @@
 package gu // Go Utilities for gomar.
 
 import (
+	"bytes"
 	"flag"
 	"log"
+	"runtime"
+	"path"
+	"fmt"
 )
 
 var (
@@ -10,6 +14,21 @@ var (
 
 	FlagInitialVerbosity = flag.String("v", "", "Initial verbosity chars") // Initial Verbosity
 )
+
+func T(args ... any) {
+	var bb bytes.Buffer
+	fmt.Fprintf(&bb, "#")
+	for i := 5; i > 0; i-- {
+		_, filename, lineno, ok := runtime.Caller(i)
+		if ok {
+			fmt.Fprintf(&bb, " %s:%d", path.Base(filename), lineno)
+		}
+	}
+	for _, arg := range args {
+		fmt.Fprintf(&bb, " :: %v", arg)
+	}
+	Log("%s", bb.String())
+}
 
 func InitVerbosity() {
 	SetVerbosityBits(*FlagInitialVerbosity)

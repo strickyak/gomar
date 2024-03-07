@@ -5,8 +5,8 @@ package emu
 import (
 	"bytes"
 	"fmt"
-	"github.com/strickyak/gomar/display"
 	. "github.com/strickyak/gomar/gu"
+	"github.com/strickyak/gomar/listings"
 	"log"
 	"strings"
 )
@@ -20,20 +20,72 @@ var enableRom bool
 var enableTramp bool
 var internalRom [0x8000]byte // up to 32K
 var cartRom [0x8000]byte     // up to 32K
+var portMem [256]byte        // anything written to $FFxx
 
-var sam display.Sam
+var Pia0HorzSyncInterruptEnable bool  // 15738 Hz
+var Pia0FrameSyncInterruptEnable bool // 60 Hz
+var GimeHorzSyncInterruptEnable bool  // 15738 Hz
+var GimeVirtSyncInterruptEnable bool // 60 Hz
+
+var horzCycles int64
+var frameCycles int64
+var gimeHorzCycles int64
+var gimeVirtCycles int64
+
+var horzPending bool
+var framePending bool
+var gimeHorzPending bool
+var gimeVirtPending bool
+var nmiPending bool
+
+var sam Sam
 
 var InitialModules []*ModuleFound
+var InternalRomSrc *listings.ModSrc
+var ExternalRomSrc *listings.ModSrc
 
 type ModuleFound struct {
-	Addr uint32
-	Len  uint32
-	CRC  uint32
-	Name string
+	Addr     uint32
+	Len      uint32
+	CRC      uint32
+	Name     string
+	Filename string // If not an OS9 module
 }
 
 func (m ModuleFound) Id() string {
 	return strings.ToLower(fmt.Sprintf("%s.%04x%06x", m.Name, m.Len, m.CRC))
+}
+
+func LoadRomListings() {
+	if *FlagInternalRomListing != "" {
+		InternalRomSrc = listings.LoadFile(*FlagInternalRomListing)
+	}
+	if *FlagInternalRomDup != "" {
+		words := strings.Split(*FlagInternalRomDup, ":")
+		//T(words)
+		//T(len(words))
+		if len(words) == 3 {
+			begin := DeHex(words[0])
+			end := DeHex(words[1])
+			to := DeHex(words[2])
+			//T(begin)
+			//T(end)
+			//T(to)
+			tmp := make(map[uint]string)
+			for k, v := range InternalRomSrc.Src {
+				tmp[k] = v // make a copy
+			}
+			for k, v := range tmp {
+				if begin <= k && k < end {
+					//T(k, k + to - begin , v)
+					InternalRomSrc.Src[k+to-begin] = v
+				}
+			}
+		}
+	}
+	if *FlagExternalRomListing != "" {
+		ExternalRomSrc = listings.LoadFile(*FlagExternalRomListing)
+	}
 }
 
 /*
@@ -46,13 +98,22 @@ func AddressInTrampSpace(addr Word) bool {
 }
 */
 
-func MappedAddressInRomSpace(addr Word, mapped int) bool {
+/*
+func BAD MappedAddressInRomSpace(addr Word, mapped int) bool {
 	physPage := uint(mapped) >> 13
 	return 0x3C <= physPage && physPage <= 0x3F && !AddressInDeviceSpace(addr)
 }
+*/
+
+func AddressInRomSpace(addr Word) bool {
+	z := 0x8000 <= addr && !AddressInDeviceSpace(addr)
+	if z {
+		// T("ROM %s %04x ", Cond(UseExternalRomAssumingRom(addr), "X", "N"), addr)
+	}
+	return z
+}
 
 func AddressInDeviceSpace(addr Word) bool {
-	// return (addr&0xFF00) == 0xFF00 && (addr&0xFFF0) != 0xFFF0
 	return 0xFF00 <= addr && addr < 0xFFF0
 }
 
@@ -68,14 +129,19 @@ func GetIOByteI(a Word) byte {
 		a &^= 0x003C // Wipe out the don't-care bits of PIAs.
 	}
 
+	if 0xFF90 <= a && a < 0xFFC0 {
+		return GetGimeIOByte(a)
+	}
+
 	switch a {
 	/* PIA 0 */
 	case 0xFF00:
+		horzPending = false // Reading Output Register A clears CA1 interrupt.
 		z = 255
 
 		if PeekB(0xFF02) == 0xFF {
 			// Not strobing keyboard, so answer mouse buttons.
-			if display.MouseDown {
+			if MouseDown {
 				z = 0xFC // buttons 1 and 2.
 			}
 		} else {
@@ -91,9 +157,9 @@ func GetIOByteI(a Word) byte {
 		dac := float64(PeekB(0xFF20)&0xFC) / 256.0
 		var mouse float64
 		if PeekB(0xFF01)&0x08 == 0 {
-			mouse = display.MouseX // or vice versa
+			mouse = MouseX // or vice versa
 		} else {
-			mouse = display.MouseY // or vice versa
+			mouse = MouseY // or vice versa
 		}
 		if mouse <= dac {
 			z &= 0x7F
@@ -105,7 +171,8 @@ func GetIOByteI(a Word) byte {
 	case 0xFF01:
 		return 0
 	case 0xFF02:
-		return kbd_probe // Reset IRQ when this is read. TODO: multiple sources of IRQ.
+		framePending = false // Reading Output Register B clears CB1 interrupt.
+		return kbd_probe     // Reset IRQ when this is read. TODO: multiple sources of IRQ.
 	case 0xFF03:
 		return 0x80 // Negative bit set: Yes the PIA caused IRQ.
 
@@ -128,22 +195,11 @@ func GetIOByteI(a Word) byte {
 		disk_i++
 		if disk_i == 257 {
 			Logd("Read SET NMI_PENDING\n")
-			irqs_pending |= NMI_PENDING
+			nmiPending = true
 			z = 0
 			disk_i = 0
 		}
 		return z
-
-	case 0xFF92: /* GIME IRQ */
-		Logd("GIME -- Read FF92 (IRQ)")
-		switch Level {
-		case 2:
-			return 0x08
-		}
-		return 0
-	case 0xFF93: /* GIME FIRQ */
-		Logd("GIME -- Read FF93 (FIRQ) NOT IMP")
-		return 0
 
 	case 0xFF83: /* emudsk */
 		return EmudskGetIOByte(a)
@@ -199,11 +255,8 @@ func ExplainBits(b byte, meanings []string) string {
 
 func PutIOByte(a Word, b byte) {
 	L("io PutIOByte %x <-- %02x", a, b)
-	PutIOByteI(a, b)
-}
-func PutIOByteI(a Word, b byte) {
+	portMem[a-0xFF00] = b
 	PokeB(a, b)
-	Logd("#PutIOByte: $%04x <- $%02x", a, b)
 
 	if 0xFF90 <= a && a < 0xFFC0 {
 		PutGimeIOByte(a, b)
@@ -211,7 +264,7 @@ func PutIOByteI(a Word, b byte) {
 	}
 
 	if 0xFF00 <= a && a <= 0xFF40 {
-		a &^= 0x003C // Wipe out the don't-care bits of PIAs.
+		a &^= 0x003C // Wipe out the don't-care bits of PIA addresses.
 	}
 
 	if 0xFFE0 <= a {
@@ -223,19 +276,23 @@ func PutIOByteI(a Word, b byte) {
 	default:
 		log.Panicf("UNKNOWN PutIOByte address: 0x%04x", a)
 
+	// http://tlindner.macmess.org/wp-content/uploads/2006/09/cocopias-R3.pdf
 	case 0xFF02:
-		kbd_probe = b
 		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
+		kbd_probe = b
 		return
 
-	case 0xFF00,
-		0xFF01,
-		0xFF03:
-		if a == 0xFF03 && b == 0x80 { // Enabling the Frame Sync IRQ? ???
-			// *FlagTraceAfter = 1 // Enable trace TODO ddt
-		}
+	case 0xFF00:
 		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
+
+	case 0xFF01:
+		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
+		Pia0HorzSyncInterruptEnable = (b & 1) != 0
 		return
+
+	case 0xFF03:
+		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
+		Pia0FrameSyncInterruptEnable = (b & 1) != 0
 
 	case 0xFF20,
 		0xFF21,
@@ -380,7 +437,7 @@ func PutIOByteI(a Word, b byte) {
 				// TODO -- fix writing.
 				if disk_i >= 256 {
 					Logd("Write SET NMI_PENDING\n")
-					irqs_pending |= NMI_PENDING
+					nmiPending = true
 					disk_i = 0
 
 					// TODO -- fix writing.
@@ -399,8 +456,12 @@ func PutIOByteI(a Word, b byte) {
 
 	case 0xFF42:
 		Logd("Write to $FF42")
+
+	case 0xFF77:
+		L("WTF: Write to $FF77")
 	case 0xFF7F:
 		Logd("Write to $FF7F")
+
 	case 0xFFE1:
 		Logd("Write to $FFE1")
 	case 0xFFE2:
@@ -498,11 +559,11 @@ func PutIOByteI(a Word, b byte) {
 		Logd("VDG sam.Fx <- $%x", sam.Fx)
 
 	case 0xFFD4:
-		sam.SamPage = 0
-		Logd("VDG sam.SamPage <- $%x", sam.SamPage)
+		sam.P1RamSwap = 0
+		Logd("VDG sam.P1RamSwap <- $%x", sam.P1RamSwap)
 	case 0xFFD5:
-		sam.SamPage = 1
-		Logd("VDG sam.SamPage <- $%x", sam.SamPage)
+		sam.P1RamSwap = 1
+		Logd("VDG sam.P1RamSwap <- $%x", sam.P1RamSwap)
 
 	case 0xFFD6:
 		sam.Rx &^= 1
@@ -531,13 +592,11 @@ func PutIOByteI(a Word, b byte) {
 		Logd("VDG sam.Mx <- $%x", sam.Mx)
 
 	case 0xFFDE:
-		Logd("VDG PutByte OK: %x <- %x\n", a, b)
-		sam.AllRam = false
-		Logd("VDG sam.AllRam <- $%v", sam.AllRam)
+		sam.TyAllRam = false
+		Logd("VDG TyAllRam <- FALSE")
 	case 0xFFDF:
-		Logd("VDG PutByte OK: %x <- %x\n", a, b)
-		sam.AllRam = true
-		Logd("VDG sam.AllRam <- $%v", sam.AllRam)
+		sam.TyAllRam = true
+		Logd("VDG TyAllRam <- TRUE")
 
 	case 0xFF80,
 		0xFF81,
@@ -584,8 +643,8 @@ func DumpHexLine(label string, bb []byte) {
 }
 
 func DoDumpSamBits() {
-	Logd("VDG/SAM BITS: F=%x M=%x R=%x V=%x sam.AllRam=%x SamPage=%x",
-		sam.Fx, sam.Mx, sam.Rx, sam.Vx, sam.AllRam, sam.SamPage)
+	Logd("VDG/SAM BITS: F=%x M=%x R=%x V=%x TyAllRam=%x P1RamSwap=%x",
+		sam.Fx, sam.Mx, sam.Rx, sam.Vx, sam.TyAllRam, sam.P1RamSwap)
 }
 
 func DoDumpAllMemory() {

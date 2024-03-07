@@ -74,14 +74,44 @@ func Trace() {
 		}
 	}
 
-	module, offset := MemoryModuleOf(pcreg_prev)
-
 	text := ""
-	if module != "" {
-		moduleLower := strings.ToLower(module)
-		text = listings.Lookup(moduleLower, uint(offset), func() {
-			// TODO -- why??? // *FlagTraceAfter = 1
-		})
+	if !sam.TyAllRam && AddressInRomSpace(pcreg_prev) {
+		var src *listings.ModSrc
+		if UseExternalRomAssumingRom(pcreg_prev) {
+			src = ExternalRomSrc
+		} else {
+			src = InternalRomSrc
+		}
+		if src != nil {
+			m, ok := src.Src[uint(pcreg_prev)]
+			if ok {
+				text = m
+			}
+		}
+	} else {
+
+		module, offset := MemoryModuleOf(pcreg_prev)
+
+		if module != "" {
+			moduleLower := strings.ToLower(module)
+			text = listings.Lookup(moduleLower, uint(offset), func() {
+				// TODO -- why??? // *FlagTraceAfter = 1
+			})
+		}
+
+		// Try for relocated ROM code
+		if text == "" && 0xC000 <= pcreg_prev && pcreg_prev < 0xE000 && ExternalRomSrc != nil {
+			m, ok := ExternalRomSrc.Src[uint(pcreg_prev)]
+			if ok {
+				text = m
+			}
+		}
+		if text == "" && InternalRomSrc != nil {
+			m, ok := InternalRomSrc.Src[uint(pcreg_prev)]
+			if ok {
+				text = m
+			}
+		}
 	}
 
 	eff := ""
@@ -179,18 +209,30 @@ func Dis_inst(inst string, reg string, cyclecount int64) {
 	dops.Reset()
 	dinst.WriteString(inst)
 	dinst.WriteString(reg)
-	Cycles += cyclecount
+	if DoubleSpeed {
+		Cycles += cyclecount
+	} else {
+		Cycles += cyclecount << 1
+	}
 }
 
 func Dis_inst_cat(inst string, cyclecount int64) {
 	dinst.WriteString(inst)
-	Cycles += cyclecount
+	if DoubleSpeed {
+		Cycles += cyclecount
+	} else {
+		Cycles += cyclecount << 1
+	}
 }
 
 func Dis_ops(part1 string, part2 string, cyclecount int64) {
 	dops.WriteString(part1)
 	dops.WriteString(part2)
-	Cycles += cyclecount
+	if DoubleSpeed {
+		Cycles += cyclecount
+	} else {
+		Cycles += cyclecount << 1
+	}
 }
 
 var reg_for_da_reg = []string{"d", "x", "y", "u", "s", "pc", "?", "?", "a", "b", "cc", "dp", "?", "?", "?", "?"}

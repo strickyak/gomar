@@ -56,7 +56,11 @@ var parseEndSection = regexp.MustCompile(`^ +[(].*?[)]:[[:digit:]]{5} +(?i:endse
 func LoadFile(filename string) *ModSrc {
 	d := make(map[uint]string)
 	// Try overriding filename with ".mod" instead of version suffix.
-	fd, err := os.Open(filename[:len(filename)-11] + ".mod")
+	var fd *os.File
+	var err error
+	if len(filename) > 11 {
+		fd, err = os.Open(filename[:len(filename)-11] + ".mod")
+	}
 	if err != nil {
 		fd, err = os.Open(filename)
 		if err != nil {

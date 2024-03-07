@@ -6,7 +6,7 @@ Gomar is an emulator for the Radio Shack Color Computer
 The focus of this emulator is on systems programming and debugging,
 not on exact hardware emulation and gaming.
 
-Copyright (C) 2019-2023 Henry Strickland (github.com/strickyak)
+Copyright (C) 2019-2024 Henry Strickland (github.com/strickyak)
 
 Gomar is based on older code "sbc09.c" with the following notices:
    """
@@ -111,7 +111,7 @@ func main() {
 }
 
 const SPLASH = `
-Gomar 6809 Emulator, Copyright (C) 2019-2023 Henry Strickland.
+Gomar 6809 Emulator, Copyright (C) 2019-2024 Henry Strickland.
 This is free software, and you are welcome to redistribute it
 under the terms of the GNU General Public License version 2.
 `

@@ -500,6 +500,7 @@ func neg() {
 	var a, r Word
 
 	if B(pcreg) == 0 {
+		T("Executing $00$00 instruction")
 		log.Panicf("Executing $00$00 instruction at pcreg=%04x", pcreg-1)
 	}
 

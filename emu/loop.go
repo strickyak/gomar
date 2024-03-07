@@ -1,18 +1,20 @@
 package emu
 
 import (
-	//NODISPLAY//"github.com/strickyak/gomar/display"
 	. "github.com/strickyak/gomar/gu"
 	"github.com/strickyak/gomar/sym"
 
 	//"bufio"
 	"bytes"
 	"flag"
-	//"fmt"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/signal"
 	"regexp"
+	"sync/atomic"
+	"syscall"
 	//"sort"
 	//"strconv"
 	//"strings"
@@ -21,13 +23,15 @@ import (
 var FlagTraceVerbosity = flag.String("vv", "", "Trace verbosity chars") // Trace Verbosity
 var FlagTraceAfter = flag.Int64("t", MaxInt64, "Tracing starts after this many steps")
 
+var FlagVdgRate = flag.Int("vdg_rate", 10003, "how often to print text screen")
+var FlagKbdRate = flag.Int("kbd_rate", 100031, "how often to frob keyboard")
+
 func Main() {
+	LoadRomListings()
 	InitExpectations()
 	CompileWatches()
 	SetVerbosityBits(*FlagInitialVerbosity)
 	InitHardware()
-	keystrokes := make(chan byte, 0)
-	go InputRoutine(keystrokes)
 
 	//NODISPLAY// CocodChan := make(chan *display.CocoDisplayParams, 50)
 	//NODISPLAY// Disp = display.NewDisplay(mem[:], 80, 25, CocodChan, keystrokes, &sam, PeekBWithInt)
@@ -59,10 +63,12 @@ func Main() {
 
 			disk_dd_fmt = disk_sector_0[16]
 
-			tracks_per_sector := int(disk_sector_0[17])*256 + int(disk_sector_0[18])
-			if tracks_per_sector != 18 {
-				log.Panicf("Not 18 sectors per track: %d.", tracks_per_sector)
-			}
+			/*
+				tracks_per_sector := int(disk_sector_0[17])*256 + int(disk_sector_0[18])
+				if tracks_per_sector != 18 {
+					log.Panicf("Not 18 sectors per track: %d.", tracks_per_sector)
+				}
+			*/
 		}
 	}
 
@@ -108,54 +114,7 @@ func Main() {
 		sreg = 0x8000
 	}
 
-	/*
-		if *FlagBootImageFilename != "" {
-			// Loading a binary file skipping the first 256 bytes of RAM
-			// and starting pcreg of 0x100 was a convention from the sbc09.c code.
-			// This is probably not the right thing for a coco emulator,
-			// but I started using it in the early days, and haven't switched away yet.
-			boot, err := ioutil.ReadFile(*FlagBootImageFilename)
-			if err != nil {
-				log.Fatalf("Cannot read boot image: %q: %v", *FlagBootImageFilename, err)
-			}
-			L("boot mem size: %x", len(boot))
-			for i, b := range boot {
-				PokeB(Word(i+0x100), b)
-			}
-			pcreg = 0x100
-			DumpAllMemory()
-		} else if *FlagKernelFilename != "" {
-			kernel, err := ioutil.ReadFile(*FlagKernelFilename)
-			if err != nil {
-				log.Fatalf("Cannot read kernel image: %q: %v", *FlagKernelFilename, err)
-			}
-			if kernel[0] != 'O' || kernel[1] != 'S' {
-				log.Fatalf("--kernel does not begin with OS")
-			}
-			L("kernel mem size: %x", len(kernel))
-			for i, b := range kernel {
-				PokeB(Word(i+0x2600), b)
-			}
-			PutW(0xFFF2, 0xFEEE) // SWI3
-			PutW(0xFFF4, 0xFEF1) // SWI2
-			PutW(0xFFFA, 0xFEFA) // SWI
-			PutW(0xFFFC, 0xFEFD) // NMI
-			PutW(0xFFF8, 0xFEF7) // IRQ
-			PutW(0xFFF6, 0xFEF4) // FIRQ
-			pcreg = 0x2602
-			DumpAllMemory()
-		}
-	*/
-
-	// if LoadBootImage() {
-	// AssertEQ(PeekB(0x2600), 'O')
-	// AssertEQ(PeekB(0x2601), 'S')
-	// pcreg = 0x2602
-	// }
-
-	InitializeVectors() // for coco1 or coco3
-
-	if *FlagUserResetVector {
+	if *FlagUserResetVector { // TODO ???
 		pcreg = PeekW(0xFFFE)
 	}
 
@@ -166,7 +125,8 @@ func Main() {
 		pcreg = HiLo(internalRom[0x3Ffe], internalRom[0x3Fff])
 	}
 	if pcreg == 0 {
-		log.Fatalf("Before run, pcreg is still 0")
+		pcreg = W(0xFFFE)
+		log.Printf("Using reset vector for pcreg: $%04x", pcreg)
 	}
 
 	sreg = 0x8000
@@ -175,7 +135,14 @@ func Main() {
 
 	Dis_len(0)
 
+	displayCount := *FlagVdgRate
+
+	kbdCount := *FlagKbdRate
+	keystrokes := make(chan byte, 0)
+	go InputRoutine(keystrokes)
+
 	defer func() {
+		display.Tick(0)
 		Finish()
 	}()
 
@@ -183,42 +150,115 @@ func Main() {
 	if *FlagMaxSteps > 0 {
 		max = *FlagMaxSteps
 	}
-	stepsUntilTimer := *FlagClock
+	// stepsUntilTimer := *FlagClock
 	early := true
+
+	////////////////////////////////////////
+	var haltDumpAndExit int32
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGQUIT)
+	go func() {
+		_ = <-sigChan
+		atomic.StoreInt32(&haltDumpAndExit, 1)
+	}()
+	////////////////////////////////////////
 
 	Cycles = int64(0)
 	for Cycles < max {
+		L("[[[ fnord #%d ]]]", Cycles)
+		if atomic.LoadInt32(&haltDumpAndExit) > 0 {
+			V['d'] = true
+			V['p'] = true
+			Logd("haltDumpAndExit ...")
+			DoDumpAllMemoryPhys()
+			JustDoDumpAllMemory()
+			Logd("... haltDumpAndExit.")
+			fmt.Printf("\n... haltDumpAndExit.\n")
+			os.Exit(99)
+		}
 		if early {
 			early = EarlyAction()
 		}
 
 		pcreg_prev = pcreg
 
-		if stepsUntilTimer == 0 {
-			DoMemoryDumps()
-			FireTimerInterrupt()
-			stepsUntilTimer = *FlagClock
-		} else {
-			stepsUntilTimer--
+		{
+			kbdCount--
+			if kbdCount <= 0 {
+				kbdService(keystrokes)
+				kbdCount = *FlagKbdRate
+			}
+
+			displayCount--
+			if displayCount <= 0 {
+				display.Tick(Cycles)
+				displayCount = *FlagVdgRate
+			}
+
+			if Pia0FrameSyncInterruptEnable {
+				if Cycles > frameCycles {
+					framePending = true
+					incr := FastCyclesPerVertical
+					frameCycles = Cycles + int64(incr)
+				}
+			}
+			if Pia0HorzSyncInterruptEnable {
+				if Cycles > horzCycles {
+					horzPending = true
+					incr := FastCyclesPerHorizontal
+					horzCycles = Cycles + int64(incr)
+				}
+			}
+
+			if GimeVirtSyncInterruptEnable {
+				if Cycles > gimeVirtCycles {
+					gimeVirtPending = true
+					incr := FastCyclesPerVertical
+					gimeVirtCycles = Cycles + int64(incr)
+				}
+			}
+			if GimeHorzSyncInterruptEnable {
+				if Cycles > gimeHorzCycles {
+					gimeHorzPending = true
+					incr := FastCyclesPerHorizontal
+					gimeHorzCycles = Cycles + int64(incr)
+				}
+			}
 		}
 
-		if Waiting {
+		if nmiPending {
+			nmiPending = false
+			nmi()
 			continue
 		}
 
-		if (irqs_pending) != 0 {
-			if (irqs_pending & NMI_PENDING) != 0 {
-				nmi()
-				continue
+		if (gimeVirtPending || gimeHorzPending || framePending || horzPending) && (ccreg&CC_INHIBIT_IRQ) == 0 {
+			if gimeVirtPending {
+				L("interrupting due to gimeVirtPending...")
 			}
-			if (irqs_pending&IRQ_PENDING) != 0 && (ccreg&CC_INHIBIT_IRQ) == 0 {
-
-				irq(keystrokes)
-				continue
+			if gimeHorzPending {
+				L("interrupting due to gimeHorzPending...")
 			}
+			if framePending {
+				L("interrupting due to framePending...")
+			}
+			if horzPending {
+				L("interrupting due to horzPending...")
+			}
+			for p := 0xFFF0; p < 0xFFFF; p += 2 {
+				L("  [%04x]  peek=%04x  int=%02x%02x  ext=%02x%02x", p, PeekW(Word(p)), internalRom[0x3FFF&p], internalRom[0x3FFF&(p+1)], cartRom[0x3FFF&p], cartRom[0x3FFF&(p+1)])
+			}
+			Waiting = false
+			irq()
+			continue
+		}
+		if Waiting {
+			Cycles += 10 // move along
+			continue
 		}
 
 		ireg = B(pcreg)
+		L("[[[ fnord #%d: %02x at %04x ]]]", Cycles, ireg, pcreg)
 		if pcreg == Word(*FlagTriggerPc) && ireg == byte(*FlagTriggerOp) {
 			*FlagTraceAfter = 1
 			SetVerbosityBits(*FlagTraceVerbosity)
@@ -238,6 +278,7 @@ func Main() {
 		if paranoid && !early {
 			ParanoidAsserts()
 		}
+
 	} /* next step */
 
 	if Expectations != nil {
@@ -278,7 +319,7 @@ func interrupt(vector_addr Word) {
 	PushWord(pcreg)
 	if vector_addr == VECTOR_FIRQ {
 		// Fast IRQ.
-		ccreg &= ^byte(CC_ENTIRE)
+		ccreg &^= byte(CC_ENTIRE)
 	} else {
 		// Other IRQs.
 		PushWord(ureg)
@@ -290,36 +331,38 @@ func interrupt(vector_addr Word) {
 	PushByte(ccreg)
 	if vector_addr == VECTOR_FIRQ {
 		// Fast IRQ.
-		ccreg &= ^byte(CC_ENTIRE)
+		ccreg &^= byte(CC_ENTIRE)
 	} else {
 		// Other IRQs.
 		ccreg |= byte(CC_ENTIRE)
 	}
 	// All IRQs.
 	ccreg |= (CC_INHIBIT_FIRQ | CC_INHIBIT_IRQ)
-	pcreg = W(vector_addr)
+	// pcreg = W(vector_addr)
+	pcreg = HiLo(internalRom[0x3fff&vector_addr], internalRom[0x3fff&(vector_addr+1)])
+	//panic("---------------interrupt--------------")
 }
 
-func irq(keystrokes <-chan byte) {
+func kbdService(keystrokes <-chan byte) {
 	kbd_cycle++
-	L("INTERRUPTING with IRQ (kbd_cycle = %d)", kbd_cycle)
-	Assert(0 == (ccreg&CC_INHIBIT_IRQ), ccreg)
 
 	if (kbd_cycle & 1) == 0 {
+		// On Odd cycles, do a keystroke.
 		ch := inkey(keystrokes)
 		kbd_ch = ch
-		if kbd_ch != 0 {
-			log.Printf("key/irq $%x=%d.", kbd_ch, kbd_ch)
-		}
 
-		L("getchar -> ch %x %q kbd_ch %x %q (kbd_cycle = %d)\n", ch, string(rune((ch))), kbd_ch, string(rune((kbd_ch))), kbd_cycle)
+		L("kbdService: getchar -> ch %x %q kbd_ch %x %q (kbd_cycle = %d)\n", ch, string(rune((ch))), kbd_ch, string(rune((kbd_ch))), kbd_cycle)
 	} else {
+		// On Even cycles, release it.
 		kbd_ch = 0
 	}
-	L("irq -> kbd_ch %x %q (kbd_cycle = %d)\n", kbd_ch, string(rune(kbd_ch)), kbd_cycle)
+	L("kbdService: irq -> kbd_ch %x %q (kbd_cycle = %d)\n", kbd_ch, string(rune(kbd_ch)), kbd_cycle)
+}
+
+func irq() {
+	Assert(0 == (ccreg&CC_INHIBIT_IRQ), ccreg)
 
 	interrupt(VECTOR_IRQ)
-	irqs_pending &^= IRQ_PENDING
 }
 
 var swi_name = []string{"swi", "swi2", "swi3"}

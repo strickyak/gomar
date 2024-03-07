@@ -23,12 +23,17 @@ import (
 var FlagTerm = flag.String("term", "Term", "name of terminal device")
 var FlagLinkerMapFilename = flag.String("map", "", "")
 
+var FlagInternalRomDup = flag.String("internal_rom_dup", "C03F:C36C:4000", "begin, end, relocation (hex)")
+var FlagInternalRomListing = flag.String("internal_rom_listing", "", "filename of .list file")
+var FlagExternalRomListing = flag.String("external_rom_listing", "", "filename of .list file")
+
 // var FlagBootImageFilename = flag.String("boot", "", "")
 var FlagLoadmFilename = flag.String("loadm", "", "")
 var FlagCartFilename = flag.String("cart", "", "")
 var FlagRom8000Filename = flag.String("rom_8000", "", "")
 var FlagRomA000Filename = flag.String("rom_a000", "", "")
-var FlagKernelFilename = flag.String("kernel", "", "")
+
+//var FlagKernelFilename = flag.String("kernel", "", "")
 var FlagDiskImageFilename = flag.String("disk", "", "OS9 formatted disk image")
 var FlagMaxSteps = flag.Int64("max", 0, "")
 var FlagClock = flag.Int64("clock", 5*1000*1000, "")
@@ -45,14 +50,18 @@ var RegexpTraceOnOS9 *regexp.Regexp
 
 var FlagExpect = flag.String("expect", "", "fragments to expect, in order, separated by semicolons")
 
+var DoubleSpeed bool
+
 type Watch struct {
 	Where    string
 	Register string
 	Message  string
 }
 
+// TODO: are these used?
 var Watches []*Watch
 
+// TODO: are these used?
 func CompileWatches() {
 	for _, s := range strings.Split(*FlagWatch, ",") {
 		if s != "" {
@@ -69,8 +78,22 @@ func CompileWatches() {
 	}
 }
 
-const IRQ_FREQ = (500 * 1000)
+const (
+	NTSCCrystalFreq    = 14.31818 * 1000000 // Hz
+	NTSCHorizontalFreq = 15738              // or 15734? // Hz
+	NTSCVerticalFreq   = 60                 // Hz
 
+	// Fast Cycles are at the "coco3" "fast" (1.9 MHz-ish) rate.
+	// Conventionally, Gomar always counts Fast Cycles.
+	FastCyclesPerVertical   = (NTSCCrystalFreq / 8) / NTSCVerticalFreq   // that is, 29829.541666666668 Fast Cycles per Vertical Scan
+	FastCyclesPerHorizontal = (NTSCCrystalFreq / 8) / NTSCHorizontalFreq // that is, 113.7519066988687 Fast Cycles per Horizontal Scan
+
+	// Assembly Language Programming for the CoCo3 (1987)(Laurence A Tepolt)(pdf) pdf-page 50
+	Coco3SlowTimer = NTSCHorizontalFreq // Hz, when Init1 Bit 5 clear.
+	Coco3FastTimer = NTSCCrystalFreq    // Hz, when Init1 Bit 5 set.
+)
+
+// TODO: are these used?
 const paranoid = false // Do paranoid checks.
 const hyp = true       // Use hyperviser code.
 
@@ -233,6 +256,7 @@ var ireg byte  /* Instruction register */
 var pcreg_prev Word
 
 var mem [0x40 * 0x2000]byte
+var devmem [512]byte // second half unused on coco, needed for f256
 
 var ixregs = []*Word{&xreg, &yreg, &ureg, &sreg}
 
@@ -364,7 +388,7 @@ func printableChar(ch byte) string {
 }
 */
 
-func H(ch byte) byte {
+func PrettyH(ch byte) byte {
 	ch &= 0x7F
 	if 32 <= ch && ch <= 126 {
 		return ch
@@ -372,7 +396,7 @@ func H(ch byte) byte {
 		return ' '
 	}
 }
-func T(ch byte) byte {
+func PrettyT(ch byte) byte {
 	if ch&128 != 0 && 128+32 <= ch && ch <= 128+126 {
 		return '+'
 	} else {

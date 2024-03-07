@@ -128,3 +128,7 @@ func Check(err error, args ...any) {
 		log.Panic(s)
 	}
 }
+
+func Hex[N Number](x N) string {
+	return fmt.Sprintf("$%x", x)
+}

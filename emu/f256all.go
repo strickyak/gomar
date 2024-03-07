@@ -5,7 +5,7 @@ package emu
 import (
 	"bytes"
 	"fmt"
-	"github.com/strickyak/gomar/display"
+	// "github.com/strickyak/gomar/display"
 	. "github.com/strickyak/gomar/gu"
 	"log"
 	"strings"

@@ -12,13 +12,25 @@ func Finish() {
 	DoDumpAllMemoryPhys()
 }
 func Dis_inst(inst string, reg string, cyclecount int64) {
-	Cycles += cyclecount
+	if DoubleSpeed {
+		Cycles += cyclecount
+	} else {
+		Cycles += cyclecount << 1
+	}
 }
 func Dis_inst_cat(inst string, cyclecount int64) {
-	Cycles += cyclecount
+	if DoubleSpeed {
+		Cycles += cyclecount
+	} else {
+		Cycles += cyclecount << 1
+	}
 }
 func Dis_ops(part1 string, part2 string, cyclecount int64) {
-	Cycles += cyclecount
+	if DoubleSpeed {
+		Cycles += cyclecount
+	} else {
+		Cycles += cyclecount << 1
+	}
 }
 func Dis_reg(b byte) {}
 

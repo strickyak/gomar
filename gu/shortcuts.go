@@ -3,6 +3,7 @@ package gu // Go Utilities for gomar.
 import (
 	"fmt"
 	"log"
+	"strconv"
 )
 
 func Fmt(format string, args ...any) string {
@@ -31,4 +32,12 @@ func QStr(x any) string {
 
 func QRepr(x any) string {
 	return fmt.Sprintf("%q", fmt.Sprintf("%#v", x))
+}
+
+func DeHex(s string) uint {
+	x, err := strconv.ParseUint(s, 16, 64)
+	if err != nil {
+		log.Panicf("Cannot convert hex $q: %v", s, err)
+	}
+	return uint(x)
 }

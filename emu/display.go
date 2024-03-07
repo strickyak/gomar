@@ -1,4 +1,4 @@
-package display
+package emu
 
 import (
 	"flag"
@@ -16,6 +16,8 @@ const HEIGHT = 800 + 20
 var MouseX, MouseY float64 // 0 to 1
 var MouseDown bool
 var MouseMutex sync.Mutex
+
+var display Screen
 
 type CocoDisplayParams struct {
 	BasicText           bool // 32x16 at 0x400
@@ -39,6 +41,7 @@ type CocoDisplayParams struct {
 }
 
 type Display struct {
+	Dirty   bool
 	Mem     []byte
 	Rows    [][]byte
 	NumRows int
@@ -52,10 +55,15 @@ type Display struct {
 }
 
 type Sam struct {
-	Fx      byte
-	Mx      byte // Memory size for SAM.
-	Rx      byte // Clock speed for SAM.
-	Vx      byte
-	AllRam  bool
-	SamPage byte
+	Fx        byte
+	Mx        byte // Memory size for SAM.
+	Rx        byte // Clock speed for SAM.
+	Vx        byte
+	TyAllRam  bool // TY bit
+	P1RamSwap byte // P1 bit
+}
+
+type Screen interface {
+	Tick(step int64)
+	Poke(addr uint, longAddr uint, x byte)
 }

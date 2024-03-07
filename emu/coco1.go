@@ -4,7 +4,6 @@
 package emu
 
 import (
-	"github.com/strickyak/gomar/display"
 	// . "github.com/strickyak/gomar/gu"
 
 	"log"
@@ -19,14 +18,37 @@ var MmuTask byte // but not used in coco1.
 const TraceMem = false // TODO: restore this some day.
 
 func EmitHardware() {}
-func InitHardware() {}
+func InitHardware() {
+	display = NewVDG()
+}
 
 func ExplainMMU() string             { return "" }
 func DoExplainMmuBlock(i int) string { return "" }
 
-func FireTimerInterrupt() {
-	irqs_pending |= IRQ_PENDING
-	Waiting = false
+func UseExternalRomAssumingRom(addr Word) bool {
+	return 0xC000 <= addr && addr < 0xFFF0
+}
+func InternalRomOffset(addr Word) uint {
+	// In coco1 & coco2, there is only 16K internal,
+	// in the lower half of 32K.
+	return 0x3FFF & uint(addr)
+}
+func ExternalRomOffset(addr Word) uint {
+	// In coco1 & coco2, there is only 16K external,
+	// but it is in the upper half of 32K.
+	return 0x4000 + 0x3FFF&uint(addr)
+}
+func RamOffset(addr Word) uint {
+	return SimpleRamOffset(addr)
+}
+
+// Coco1,2 can swap ram pages
+func SimpleRamOffset(addr Word) uint {
+	if sam.P1RamSwap != 0 {
+		return 0x8000 ^ uint(addr)
+	} else {
+		return uint(addr)
+	}
 }
 
 // B is fundamental func to get byte.  Hack register access into here.
@@ -35,9 +57,9 @@ func B(addr Word) byte {
 	if AddressInDeviceSpace(addr) {
 		z = GetIOByte(addr)
 		L("GetIO %04x -> %02x : %c %c", addr, z, H(z), T(z))
-		mem[addr] = z
+		devmem[255&addr] = z
 	} else {
-		z = mem[addr]
+		z = mem[RamOffset(addr)]
 	}
 	if TraceMem {
 		L("\t\t\t\tGetB %04x -> %02x : %c %c", addr, z, H(z), T(z))
@@ -88,8 +110,8 @@ func PutGimeIOByte(a Word, b byte) {
 	// log.Panicf("UNKNOWN PutGimeIOByte address: 0x%04x <- 0x%02x", a, b)
 }
 
-func GetCocoDisplayParams() *display.CocoDisplayParams {
-	z := &display.CocoDisplayParams{
+func GetCocoDisplayParams() *CocoDisplayParams {
+	z := &CocoDisplayParams{
 		BasicText:       *FlagBasicText,
 		Gime:            false,
 		Graphics:        false,

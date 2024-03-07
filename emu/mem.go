@@ -186,7 +186,8 @@ func PutAReg(x byte) { dreg = HiLo(x, Lo(dreg)) }
 func PutBReg(x byte) { dreg = HiLo(Hi(dreg), x) }
 
 func DoMemoryDumps() {
-	log.Printf("# pre timer interrupt #")
+	panic("DoMemoryDumps")
+	// log.Printf("# pre timer interrupt #")
 	// DoDumpAllMemory()
 	// log.Printf("# pre timer interrupt #")
 	// DoDumpAllMemoryPhys()
@@ -339,4 +340,40 @@ NoCan3_docs.txt
 [12:18 PM]Ciaran: excellent, cheers - that seems to confirm it.  top bits of FF9B are latched, used for later writes to FFAx.  lower bits of FF9B are used directly as bank for video.
 [12:18 PM]Ciaran: all sounds eminently implementable
 [12:19 PM]Ciaran: as for all the other approaches mentioned in that source - nocan64 and "collyer", i think i'll just ignore those
+*/
+
+/*
+Where exactly does memory get overwritten in the Cartridge space?
+
+546369 #d M c000: 444b 1a50 5f1f 9b30  8d00 5910 8e04 00a6  8484 3fa7 a0a6 802a  f617 180b 1a50 308d   DK.P_..0..Y....&..?' &.*v....P0.
+546370 #d M c020: 0042 108e 0500 a684  843f a7a2 a680 2af6  20fe ff7f f8ce 7ff8  1ad0 363f ee8d 000a   .B....&..?'"&.*v ~..xN.x.P6?n...
+546371 #d M c040: ff7f fa10 ff7f fcfe  7ff8 39be 7ffa bf7f  fe8e c05c bf7f fa10  ce7f f03b 10fe 7ffc   ..z...|~.x9>.z?.~.@\?.z.N.p;.~.|
+546372 #d M c060: 6e9f 7ffe 202d 2d20  5354 5249 434b 5941  4b20 4652 4f42 494f  2050 5245 424f 4f54   n..~ -- STRICKYAK FROBIO PREBOOT
+546373 #d M c080: 202d 2da0 ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff    -- ............................
+546374 #d M c0a0: ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff   ................................
+546375 #d M c0c0: ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff  ff7e e29d ffff ffff   .........................~b.....   <==
+546376 #d M c0e0: ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff   ................................
+
+546433 #d M c800: 1f02 3440 aee8 1134  10ae 6bbd d6e6 3420  ece8 1533 cb34 40ee  68ae 44bd d6e6 3268   ..4@.h.4..k=Vf4 lh.3K4@nh.D=Vf2h
+546434 #d M c820: 2011 ece8 1134 06ae  e811 3410 ae6b bdd6  e632 64ae e4ec 84c3  0028 ed64 ec62 e3e8    .lh.4..h.4..k=Vf2d.dl.C.(mdlbch
+546435 #d M c840: 1134 06ae 66bd d79c  c640 ae62 bdd7 0132  6220 04c6 01e7 66e6  6632 6935 e034 6032   .4..f=W.F@.b=W.2b .F.gfff2i5`4`2
+546436 #d M c860: 7e10 ae6a 3384 cc00  0020 09ec 68e7 c0ec  e4c3 0001 ede4 10ac  e426 f032 6235 e0ff   ~..j3.L.. .lhg@ldC..md.,d&p2b5`.
+546437 #d M c880: ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff   ................................
+546438 #d M c8a0: ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff 1212 1212  1212 1212 1212 12ff   ................................   <==
+546439 #d M c8c0: ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff   ................................
+546440 #d M c8e0: ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff  ffff ffff ffff ffff   ................................
+546441 #d M c900: 3440 8eff 23e6 84c4  fbe7 84ce ff22 e6c4  ca02 e7c4 e684 ca04  e784 e6c4 ca02 e7c4   4@..#f.D{g.N."fDJ.gDf.J.g.fDJ.gD
+546442 #d M c920: 8e00 0abd c946 e6c4  c4fd e7c4 8e00 0a35  407e c946 327e 4f5f  8e98 211f 161f 60ed   ...=IFfDD}gD...5@~IF2~O_..!...`m
+546443 #d M c940: e4ae e432 6239 3440  3384 bdce 615d 2709  200d 3d3d 3d3d 3d33  5f11 8300 0026 f335   d.d2b94@3.=Na]'. .=====3_....&s5
+
+Clock Speeds:
+
+$ livy
+      14.31818 / 8
+   _0 = (*livy.Num)
+1.7897725
+      14.31818 / 16
+   _1 = (*livy.Num)
+0.89488625
+
 */
