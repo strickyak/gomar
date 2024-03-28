@@ -26,7 +26,10 @@ var FlagTraceAfter = flag.Int64("t", MaxInt64, "Tracing starts after this many s
 var FlagVdgRate = flag.Int("vdg_rate", 10003, "how often to print text screen")
 
 // doubles in Os9 //  var FlagKbdRate = flag.Int("kbd_rate", 100031, "how often to frob keyboard")
-var FlagKbdRate = flag.Int("kbd_rate", 50031, "how often to frob keyboard")
+// var FlagKbdRate = flag.Int("kbd_rate", 50031, "how often to frob keyboard")
+var FlagKbdRate = flag.Int("kbd_rate", 10031, "how often to frob keyboard")
+
+var FlagDebugTcp1Write = flag.Int("tcp1_write", 0xDB6A, "specific to wiztcp1.asm")
 
 func Main() {
 	LoadRomListings()
@@ -134,6 +137,7 @@ func Main() {
 	sreg = 0x8000
 	dpreg = 0
 	iflag = 0
+	ccreg = 0x50  // Disable FIRQ & IRQ
 
 	Dis_len(0)
 
@@ -167,7 +171,60 @@ func Main() {
 
 	Cycles = int64(0)
 	for Cycles < max {
-		L("[[[ fnord #%d ]]]", Cycles)
+	 	if int(pcreg) == 0xC653 {
+			V['M'] = true
+			V['m'] = true
+			V['d'] = true
+			DoDumpAllMemory()
+			panic("0xC653 -- 'BAD FILE STRUCTURE' ERROR")
+		}
+
+	 	if int(pcreg) == *FlagDebugTcp1Write && PeekB(pcreg) == 0xAF /* STX indexed */ {
+			vcmd := PeekB(0x00F3 /* VCMD */)
+			sector := PeekW(0x00F6 /* VCMD+3 */)
+			bufaddr := PeekW(0x00EE /* DCBPT */)
+			L(";;;;;;")
+			L("vcmd=$%02x sector=$%04x bufaddr=$%04x yreg=$%04x", vcmd, sector, bufaddr, yreg)
+
+			var bb []byte
+			for i := Word(0); i < 256; i ++ {
+				bb = append(bb, PeekB(bufaddr + i))
+			}
+			DumpHexLines("DCBPT", bb)
+			L(";;;;;;")
+
+			if vcmd==3 && sector == 0x0135 {
+				if PeekB(bufaddr) != 0x46 && yreg == 256 {
+					V['M'] = true
+					V['m'] = true
+					V['d'] = true
+					DoDumpAllMemory()
+					panic("FlagDebugTcp1Write")
+				}
+			}
+
+			if vcmd==3 && sector == 0x0134 {
+				if PeekB(bufaddr) != 0x45 && yreg == 256 {
+					V['M'] = true
+					V['m'] = true
+					V['d'] = true
+					DoDumpAllMemory()
+					panic("FlagDebugTcp1Write")
+				}
+			}
+
+			if vcmd==3 && sector == 0x0133 {
+				if PeekB(bufaddr) != 0xFF && yreg == 256 {
+					V['M'] = true
+					V['m'] = true
+					V['d'] = true
+					DoDumpAllMemory()
+					panic("FlagDebugTcp1Write")
+				}
+			}
+		}
+
+
 		if atomic.LoadInt32(&haltDumpAndExit) > 0 {
 			V['d'] = true
 			V['p'] = true
@@ -186,7 +243,9 @@ func Main() {
 
 		{
 			kbdCount--
+			// L("kbd %d", kbdCount)
 			if kbdCount <= 0 {
+				L("kbd service %d", kbdCount)
 				kbdService(keystrokes)
 				kbdCount = *FlagKbdRate
 			}
@@ -260,13 +319,14 @@ func Main() {
 		}
 
 		ireg = B(pcreg)
-		L("[[[ fnord #%d: %02x at %04x ]]]", Cycles, ireg, pcreg)
-		if pcreg == Word(*FlagTriggerPc) && ireg == byte(*FlagTriggerOp) {
-			*FlagTraceAfter = 1
-			SetVerbosityBits(*FlagTraceVerbosity)
-			log.Printf("TRIGGERED")
-			// MemoryModules()
-			// DoDumpAllMemory()
+		if pcreg == Word(*FlagTriggerPc) {
+			if *FlagTriggerCount > 1 {
+				(*FlagTriggerCount)--
+			} else {
+				*FlagTraceAfter = 1
+				SetVerbosityBits(*FlagTraceVerbosity)
+				log.Printf("TRIGGERED")
+			}
 		}
 		pcreg++
 
@@ -357,8 +417,8 @@ func kbdService(keystrokes <-chan byte) {
 	} else {
 		// On Even cycles, release it.
 		kbd_ch = 0
+		L("kbdService: release (kbd_cycle = %d)", kbd_cycle)
 	}
-	L("kbdService: irq -> kbd_ch %x %q (kbd_cycle = %d)\n", kbd_ch, string(rune(kbd_ch)), kbd_cycle)
 }
 
 func irq() {

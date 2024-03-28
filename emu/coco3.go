@@ -251,7 +251,7 @@ func ExplainMMU() string {
 	if sam.P1RamSwap != 0 {
 		romText += "RAM=Swapped32k32k, "
 	}
-	return F("mmu:%d task:%d [[ %02x %02x %02x %02x  %02x %02x %02x %02x || %02x %02x %02x %02x  %02x %02x %02x %02x ]] Init=%02x,%02x  %s  (%02x %02x %02x %02x  %02x %02x %02x %02x) (%02x %02x %02x %02x  %02x %02x %02x %02x)",
+	return F("mmu:%d task:%d [[ %02x %02x %02x %02x  %02x %02x %02x %02x || %02x %02x %02x %02x  %02x %02x %02x %02x ]] Init=%02x,%02x  %s  (%02x %02x %02x %02x  %02x %02x %02x %02x) (%02x %02x %02x %02x  %02x %02x %02x %02x) %02x %02x %02x %02x %02x %02x / %02x %02x %02x %02x  %02x %02x %02x %02x / %02x%02x%02x",
 		Cond(MmuEnable, 1, 0),
 		MmuTask&1,
 		MmuMap[0][0],
@@ -291,6 +291,27 @@ func ExplainMMU() string {
 		portMem[0x9d],
 		portMem[0x9e],
 		portMem[0x9f],
+
+		PeekB(0x00EA),
+		PeekB(0x00EB),
+		PeekB(0x00EC),
+		PeekB(0x00ED),
+		PeekB(0x00EE),
+		PeekB(0x00EF),
+
+		PeekB(0x00F0),
+		PeekB(0x00F1),
+		PeekB(0x00F2),
+		PeekB(0x00F3),
+
+		PeekB(0x00F4),
+		PeekB(0x00F5),
+		PeekB(0x00F6),
+		PeekB(0x00F7),
+
+		PeekB(0xD938),
+		PeekB(0xD939),
+		PeekB(0xD93A),
 	)
 }
 

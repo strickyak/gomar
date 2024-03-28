@@ -41,7 +41,7 @@ func MemoryModuleOf(addr Word) (string, Word) {
 	}
 
 	if start != 0x300 || limit != 0x400 {
-		return "NOTYET", addr
+		return "==", addr
 	}
 
 	var buf bytes.Buffer

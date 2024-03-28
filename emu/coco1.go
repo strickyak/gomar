@@ -4,7 +4,7 @@
 package emu
 
 import (
-	// . "github.com/strickyak/gomar/gu"
+	. "github.com/strickyak/gomar/gu"
 
 	"log"
 )
@@ -56,13 +56,29 @@ func B(addr Word) byte {
 	var z byte
 	if AddressInDeviceSpace(addr) {
 		z = GetIOByte(addr)
-		L("GetIO %04x -> %02x : %c %c", addr, z, H(z), T(z))
+		L("GetIO %04x -> %02x : %c %c", addr, z, PrettyH(z), PrettyT(z))
 		devmem[255&addr] = z
 	} else {
-		z = mem[RamOffset(addr)]
+		if !sam.TyAllRam && AddressInRomSpace(addr) {
+			if UseExternalRomAssumingRom(addr) {
+				//T()
+				o := ExternalRomOffset(addr)
+				z = cartRom[o]
+			} else {
+				//T()
+				o := InternalRomOffset(addr)
+				z = internalRom[o]
+			}
+		} else {
+			//T()
+			// Not ROM so use RAM
+			a := addr ^ Cond(sam.P1RamSwap != 0, Word(0x8000), Word(0))
+			z = mem[a]
+			//T("B", Hex(addr), Hex(a), Hex(z))
+		}
 	}
 	if TraceMem {
-		L("\t\t\t\tGetB %04x -> %02x : %c %c", addr, z, H(z), T(z))
+		L("\t\t\t\tGetB %04x -> %02x : %c %c", addr, z, PrettyH(z), PrettyT(z))
 	}
 	return z
 }
@@ -76,11 +92,31 @@ func PokeB(addr Word, b byte) {
 }
 
 func PeekB(addr Word) byte {
-	return mem[addr]
+	var z byte
+	if !sam.TyAllRam && AddressInRomSpace(addr) {
+		if UseExternalRomAssumingRom(addr) {
+			//T()
+			o := ExternalRomOffset(addr)
+			z = cartRom[o]
+		} else {
+			//T()
+			o := InternalRomOffset(addr)
+			z = internalRom[o]
+		}
+	} else {
+		//T()
+		// Not ROM so use RAM
+		a := addr ^ Cond(sam.P1RamSwap != 0, Word(0x8000), Word(0))
+		z = mem[a]
+		//T("B", Hex(addr), Hex(a), Hex(z))
+	}
+	return z
 }
 
 // PutB is fundamental func to set byte.  Hack register access into here.
 func PutB(addr Word, x byte) {
+	display.Poke(uint(addr), uint(addr), x)
+
 	old := mem[addr]
 	if enableRom && 0x8000 <= addr && addr < 0xFF00 {
 		L("ROM MODE inhibits write")
@@ -106,10 +142,16 @@ func PutGimeIOByte(a Word, b byte) {
 	// TODO -- but, coco13 has this line:
 	// if 0xFF90 <= a && a < 0xFFC0 { PutGimeIOByte(a, b) }
 
-	log.Printf("TODO UNKNOWN PutGimeIOByte address: 0x%04x <- 0x%02x", a, b)
+	log.Printf("Coco1: UNKNOWN PutGimeIOByte address: 0x%04x <- 0x%02x", a, b)
 	// log.Panicf("UNKNOWN PutGimeIOByte address: 0x%04x <- 0x%02x", a, b)
 }
 
+func GetGimeIOByte(a Word) byte {
+	log.Printf("Coco1: UNKNOWN GetGimeIOByte address: 0x%04x -> 0xFF", a)
+	return 0xFF
+}
+
+/*
 func GetCocoDisplayParams() *CocoDisplayParams {
 	z := &CocoDisplayParams{
 		BasicText:       *FlagBasicText,
@@ -131,6 +173,7 @@ func GetCocoDisplayParams() *CocoDisplayParams {
 	}
 	return z
 }
+*/
 
 // TODO
 

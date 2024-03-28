@@ -43,8 +43,9 @@ var FlagQuotedTerminal = flag.Bool("quoted_terminal", false, "quote terminal out
 var FlagBracketTerminal = flag.Bool("bracket_terminal", false, "brackets around terminal output for debugging")
 
 var FlagWatch = flag.String("watch", "", "Sequence of module:addr:reg:message,...")
-var FlagTriggerPc = flag.Uint64("trigger_pc", 0xC00D, "")
-var FlagTriggerOp = flag.Uint64("trigger_op", 0x17, "")
+var FlagTriggerCount = flag.Uint64("trigger_count", 1, "")
+var FlagTriggerPc = flag.Uint64("trigger_pc", 0, "")
+// var FlagTriggerOp = flag.Uint64("trigger_op", 0x17, "")
 var FlagTraceOnOS9 = flag.String("trigger_os9", "", "")
 var RegexpTraceOnOS9 *regexp.Regexp
 
