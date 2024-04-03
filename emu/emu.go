@@ -288,9 +288,15 @@ const VECTOR_IRQ = 0xFFF8
 const VECTOR_FIRQ = 0xFFF6
 const VECTOR_NMI = 0xFFFC
 
-// 200 = 0x80 = CLEAR; 033=ESC;  201=F1, 202=F2, 203=BREAK
-// 204=up 205=dn 206=left 207=right
-const KB_NORMAL = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ\204\205\206\207 0123456789:;,-./\r\200\033\000\000\201\202\000"
+//os9? // 200 = 0x80 = CLEAR; 033=ESC;  201=F1, 202=F2, 203=BREAK
+//os9? // 204=up 205=dn 206=left 207=right
+//os9? const KB_NORMAL = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ\204\205\206\207 0123456789:;,-./\r\200\033\000\000\201\202\000"
+//os9? const KB_SHIFT = "`abcdefghijklmnopqrstuvwxyz____ 0!\"#$%&'()*+<=>?___..__."
+//os9? const KB_CTRL = `.................................|.~...^[]..{_}\........`
+
+// HDBDOS:
+// 12 = \014 = CLEAR;
+const KB_NORMAL = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ\204\205\206\207 0123456789:;,-./\r\014\033\000\000\201\202\000"
 const KB_SHIFT = "`abcdefghijklmnopqrstuvwxyz____ 0!\"#$%&'()*+<=>?___..__."
 const KB_CTRL = `.................................|.~...^[]..{_}\........`
 

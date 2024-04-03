@@ -5,6 +5,7 @@ package emu
 import (
 	"bufio"
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 )
@@ -99,10 +100,18 @@ const INKEY2 = `
 `
 
 var flagN = flag.Bool("n", false, "Disable reading keystrokes from stdin")
-var flagInkey = flag.String("inkey", INKEY1, "Inject keystrokes")
+var flagInkey = flag.String("inkey", "", "Inject keystrokes")
+var flagInkeyFile = flag.String("inkey_file", INKEY1, "Filename from which to inject keystrokes")
 
 func InputRoutine(keystrokes chan<- byte) {
 	s := *flagInkey
+	for s == "" && *flagInkeyFile != "" {
+		bb, err := ioutil.ReadFile(*flagInkeyFile)
+		if err != nil {
+			log.Fatalf("Cannot read --inkey_file %q: %v", *flagInkeyFile, err)
+		}
+		s = string(bb)
+	}
 	for s != "" {
 		ch := s[0]
 		if ch == '\n' {

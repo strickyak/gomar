@@ -5,7 +5,10 @@ package emu
 import (
 	"bytes"
 	"fmt"
+	"flag"
 )
+
+var FlagShowVDGScreen = flag.Bool("show_vdg_screen", false, "show VDG screens on stdout")
 
 type VDG struct {
 	Dirty   bool
@@ -37,6 +40,7 @@ func (o *VDG) Tick(step int64) {
 	if !o.Dirty {
 		return
 	}
+	if !*FlagShowVDGScreen  { return }
 	o.Dirty = false
 
 	fmt.Printf("=-=-=-=-=-=-=-=-=-= %d  (%d %d %d %d %d %d) \n", step, o.V, o.Addr, o.P, o.R, o.M, o.Ty)
