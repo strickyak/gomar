@@ -49,6 +49,7 @@ func Lookup(module string, offset uint, startTrace func()) string {
 	return s // Empty if offset not found.
 }
 
+var parseLabel = regexp.MustCompile(`^([[:xdigit:]]{4})  +[(].*?[)]:[0-9]{5} +([A-Za-z0-9._$@]+[:]?) *$`)
 var parse = regexp.MustCompile(`^([[:xdigit:]]{4}) [[:xdigit:]]+ +[(].*?[)]:[0-9]{5}         (.*)$`)
 var parseSection = regexp.MustCompile(`^ +[(].*?[)]:[[:digit:]]{5} +(?i:section) +([[:word:]]+)`)
 var parseEndSection = regexp.MustCompile(`^ +[(].*?[)]:[[:digit:]]{5} +(?i:endsection)`)
@@ -76,6 +77,8 @@ func LoadFile(filename string) *ModSrc {
 	defer fd.Close()
 	r := bufio.NewScanner(fd)
 	inOtherSection := false
+
+	var sawAddr, sawLabel string
 	for r.Scan() {
 		text := r.Text()
 		m := parse.FindStringSubmatch(text)
@@ -85,8 +88,18 @@ func LoadFile(filename string) *ModSrc {
 			if err != nil {
 				log.Panicf("Should have been a hex integer: %q: %v", hexaddr, err)
 			}
+			if sawLabel != "" && sawAddr == hexaddr && line[0] == ' ' {
+				line = sawLabel + line
+			}
 			d[uint(addr)] = line
 			//log.Printf("FILE %s ADDR %x LINE %q", filename, addr, line)
+			sawAddr = ""
+			sawLabel = ""
+		}
+		m = parseLabel.FindStringSubmatch(text)
+		if m != nil && !inOtherSection {
+			sawAddr = m[1]
+			sawLabel = m[2]
 		}
 		m = parseSection.FindStringSubmatch(text)
 		if m != nil {
