@@ -12,19 +12,19 @@ SHOW='--show_vdg_screen=0'
 
 case "$1" in
 	h1)
-		INKEY='--inkey_file=inkey/decb_many_dirs.txt'
+		INKEY='--inkey_file=inkey-test-data/decb_many_dirs.txt'
 		SHOW='--show_vdg_screen=1'
 		;;
 	h2)
-		INKEY='--inkey_file=inkey/decb_many_saves.txt'
+		INKEY='--inkey_file=inkey-test-data/decb_many_saves.txt'
 		SHOW='--show_vdg_screen=1'
 		;;
 	g1)
-		INKEY='--inkey_file=inkey/pmode11screen10.txt'
+		INKEY='--inkey_file=inkey-test-data/pmode11screen10.txt'
 		SHOW='--show_vdg_screen=1'
 		;;
 	g2)
-		INKEY='--inkey_file=inkey/decb_try_clear.txt'
+		INKEY='--inkey_file=inkey-test-data/decb_try_clear.txt'
 		SHOW='--show_vdg_screen=1'
 		;;
 esac
