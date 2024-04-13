@@ -293,6 +293,7 @@ func Main() {
 			continue
 		}
 
+// TODO set the PIA bits, etc, due to what interrupt
 		if (gimeVirtPending || gimeHorzPending || framePending || horzPending) && (ccreg&CC_INHIBIT_IRQ) == 0 {
 			if gimeVirtPending {
 				L("interrupting due to gimeVirtPending...")
