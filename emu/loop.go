@@ -7,7 +7,7 @@ import (
 	//"bufio"
 	"bytes"
 	"flag"
-	"fmt"
+	//"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -137,7 +137,7 @@ func Main() {
 	sreg = 0x8000
 	dpreg = 0
 	iflag = 0
-	ccreg = 0x50  // Disable FIRQ & IRQ
+	ccreg = 0x50 // Disable FIRQ & IRQ
 
 	Dis_len(0)
 
@@ -171,70 +171,75 @@ func Main() {
 
 	Cycles = int64(0)
 	for Cycles < max {
-	 	if int(pcreg) == 0xC653 {
-			V['M'] = true
-			V['m'] = true
-			V['d'] = true
-			DoDumpAllMemory()
-			panic("0xC653 -- 'BAD FILE STRUCTURE' ERROR")
-		}
-
-	 	if int(pcreg) == *FlagDebugTcp1Write && PeekB(pcreg) == 0xAF /* STX indexed */ {
-			vcmd := PeekB(0x00F3 /* VCMD */)
-			sector := PeekW(0x00F6 /* VCMD+3 */)
-			bufaddr := PeekW(0x00EE /* DCBPT */)
-			L(";;;;;;")
-			L("vcmd=$%02x sector=$%04x bufaddr=$%04x yreg=$%04x", vcmd, sector, bufaddr, yreg)
-
-			var bb []byte
-			for i := Word(0); i < 256; i ++ {
-				bb = append(bb, PeekB(bufaddr + i))
-			}
-			DumpHexLines("DCBPT", bb)
-			L(";;;;;;")
-
-			if vcmd==3 && sector == 0x0135 {
-				if PeekB(bufaddr) != 0x46 && yreg == 256 {
+		/*
+			 	if int(pcreg) == 0xC653 {
 					V['M'] = true
 					V['m'] = true
 					V['d'] = true
 					DoDumpAllMemory()
-					panic("FlagDebugTcp1Write")
+					panic("0xC653 -- 'BAD FILE STRUCTURE' ERROR")
 				}
-			}
+		*/
+		/*
+				const STX_INDEXED = 0xAF
+			 	if int(pcreg) == *FlagDebugTcp1Write && PeekB(pcreg) == STX_INDEXED {
+					vcmd := PeekB(0x00F3 ) // VCMD
+					sector := PeekW(0x00F6 )  // VCMD+3
+					bufaddr := PeekW(0x00EE )  // DCBPT
+					L(";;;;;;")
+					L("vcmd=$%02x sector=$%04x bufaddr=$%04x yreg=$%04x", vcmd, sector, bufaddr, yreg)
 
-			if vcmd==3 && sector == 0x0134 {
-				if PeekB(bufaddr) != 0x45 && yreg == 256 {
-					V['M'] = true
-					V['m'] = true
-					V['d'] = true
-					DoDumpAllMemory()
-					panic("FlagDebugTcp1Write")
+					var bb []byte
+					for i := Word(0); i < 256; i ++ {
+						bb = append(bb, PeekB(bufaddr + i))
+					}
+					DumpHexLines("DCBPT", bb)
+					L(";;;;;;")
+
+					if vcmd==3 && sector == 0x0135 {
+						if PeekB(bufaddr) != 0x46 && yreg == 256 {
+							V['M'] = true
+							V['m'] = true
+							V['d'] = true
+							DoDumpAllMemory()
+							panic("FlagDebugTcp1Write")
+						}
+					}
+
+					if vcmd==3 && sector == 0x0134 {
+						if PeekB(bufaddr) != 0x45 && yreg == 256 {
+							V['M'] = true
+							V['m'] = true
+							V['d'] = true
+							DoDumpAllMemory()
+							panic("FlagDebugTcp1Write")
+						}
+					}
+
+					if vcmd==3 && sector == 0x0133 {
+						if PeekB(bufaddr) != 0xFF && yreg == 256 {
+							V['M'] = true
+							V['m'] = true
+							V['d'] = true
+							DoDumpAllMemory()
+							panic("FlagDebugTcp1Write")
+						}
+					}
 				}
+		*/
+
+		/*
+			if atomic.LoadInt32(&haltDumpAndExit) > 0 {
+				V['d'] = true
+				V['p'] = true
+				Logd("haltDumpAndExit ...")
+				DoDumpAllMemoryPhys()
+				JustDoDumpAllMemory()
+				Logd("... haltDumpAndExit.")
+				fmt.Printf("\n... haltDumpAndExit.\n")
+				os.Exit(99)
 			}
-
-			if vcmd==3 && sector == 0x0133 {
-				if PeekB(bufaddr) != 0xFF && yreg == 256 {
-					V['M'] = true
-					V['m'] = true
-					V['d'] = true
-					DoDumpAllMemory()
-					panic("FlagDebugTcp1Write")
-				}
-			}
-		}
-
-
-		if atomic.LoadInt32(&haltDumpAndExit) > 0 {
-			V['d'] = true
-			V['p'] = true
-			Logd("haltDumpAndExit ...")
-			DoDumpAllMemoryPhys()
-			JustDoDumpAllMemory()
-			Logd("... haltDumpAndExit.")
-			fmt.Printf("\n... haltDumpAndExit.\n")
-			os.Exit(99)
-		}
+		*/
 		if early {
 			early = EarlyAction()
 		}
@@ -293,7 +298,7 @@ func Main() {
 			continue
 		}
 
-// TODO set the PIA bits, etc, due to what interrupt
+		// TODO set the PIA bits, etc, due to what interrupt
 		if (gimeVirtPending || gimeHorzPending || framePending || horzPending) && (ccreg&CC_INHIBIT_IRQ) == 0 {
 			if gimeVirtPending {
 				L("interrupting due to gimeVirtPending...")

@@ -4,11 +4,12 @@ package emu
 
 import (
 	"bytes"
-	"fmt"
 	"flag"
+	"fmt"
 
 	. "github.com/strickyak/gomar/gu"
 )
+
 var FlagShowGIMEScreen = flag.Bool("show_gime_screen", false, "show GIME screens on stdout")
 
 type Gime struct {
@@ -47,7 +48,9 @@ func (o *Gime) Tick(step int64) {
 	if !o.Dirty {
 		return
 	}
-	if !*FlagShowGIMEScreen  { return }
+	if !*FlagShowGIMEScreen {
+		return
+	}
 	o.Dirty = false
 
 	p := GetCocoDisplayParams()

@@ -33,7 +33,7 @@ var FlagCartFilename = flag.String("cart", "", "")
 var FlagRom8000Filename = flag.String("rom_8000", "", "")
 var FlagRomA000Filename = flag.String("rom_a000", "", "")
 
-//var FlagKernelFilename = flag.String("kernel", "", "")
+// var FlagKernelFilename = flag.String("kernel", "", "")
 var FlagDiskImageFilename = flag.String("disk", "", "OS9 formatted disk image")
 var FlagMaxSteps = flag.Int64("max", 0, "")
 var FlagClock = flag.Int64("clock", 5*1000*1000, "")
@@ -45,11 +45,13 @@ var FlagBracketTerminal = flag.Bool("bracket_terminal", false, "brackets around 
 var FlagWatch = flag.String("watch", "", "Sequence of module:addr:reg:message,...")
 var FlagTriggerCount = flag.Uint64("trigger_count", 1, "")
 var FlagTriggerPc = flag.Uint64("trigger_pc", 0, "")
+
 // var FlagTriggerOp = flag.Uint64("trigger_op", 0x17, "")
 var FlagTraceOnOS9 = flag.String("trigger_os9", "", "")
 var RegexpTraceOnOS9 *regexp.Regexp
 
 var FlagExpect = flag.String("expect", "", "fragments to expect, in order, separated by semicolons")
+var FlagExpectFile = flag.String("expect_file", "", "file containing fragments to expect, in order, on separate lines (using LF for unix newline)")
 
 var DoubleSpeed bool
 

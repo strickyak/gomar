@@ -99,18 +99,18 @@ const INKEY2 = `
 ~~~~~dir
 `
 
-var flagN = flag.Bool("n", false, "Disable reading keystrokes from stdin")
-var flagInkey = flag.String("inkey", "", "Inject keystrokes")
-var flagInkeyFile = flag.String("inkey_file", INKEY1, "Filename from which to inject keystrokes")
+var flagN = flag.Bool("n", false, "Disable (third) reading keystrokes from stdin")
+var flagInkey = flag.String("inkey", "", "(second) Inject keystrokes")
+var flagInkeyFile = flag.String("inkey_file", INKEY1, "Filename from which to (first) inject keystrokes")
 
 func InputRoutine(keystrokes chan<- byte) {
 	s := *flagInkey
-	for s == "" && *flagInkeyFile != "" {
+	if *flagInkeyFile != "" {
 		bb, err := ioutil.ReadFile(*flagInkeyFile)
 		if err != nil {
 			log.Fatalf("Cannot read --inkey_file %q: %v", *flagInkeyFile, err)
 		}
-		s = string(bb)
+		s = string(bb) + s
 	}
 	for s != "" {
 		ch := s[0]
