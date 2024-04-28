@@ -634,7 +634,7 @@ func PutGimeIOByte(a Word, b byte) {
 
 	switch a {
 	default:
-		log.Panicf("UNKNOWN PutIOByte address: 0x%04x", a)
+		log.Panicf("UNKNOWN PutGimeIOByte address: 0x%04x", a)
 
 	case 0xFFB0,
 		0xFFB1,
