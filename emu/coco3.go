@@ -605,6 +605,10 @@ func DoDumpProcesses() {
 }
 
 func GetGimeIOByte(a Word) byte {
+	if 0xFFA0 <= a && a <= 0xFFBF {
+		log.Printf("GetGimeIOByte: readable range: $%04x -> $%04x.")
+		return portMem[a&0xFF]
+	}
 	switch a {
 	case 0xFF92: /* GIME IRQ */
 		Logd("GIME -- Read FF92 (IRQ)")

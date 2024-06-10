@@ -9,6 +9,7 @@ import (
 )
 
 var FlagShowVDGScreen = flag.Bool("show_vdg_screen", false, "show VDG screens on stdout")
+var FlagSemiGraphicsNotDirty = flag.Bool("semi-graphics-not-dirty", true, "don't let semigraphics (blinking cursor!) dirty it")
 
 type VDG struct {
 	Dirty   bool
@@ -78,7 +79,11 @@ func (o *VDG) Poke(addr uint, longAddr uint, x byte) {
 	if 0xFFC0 <= addr && addr < 0xFFE0 {
 		o.changeBit(addr)
 	} else if o.Addr <= addr && addr < o.Addr+o.Len {
-		o.Dirty = true
+		if *FlagSemiGraphicsNotDirty && (x&128)!=0 && (x&15)==15 {
+			// dont set dirty bit
+		} else {
+			o.Dirty = true
+		}
 	}
 }
 

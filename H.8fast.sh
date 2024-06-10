@@ -1,10 +1,11 @@
 # works with pages 31 (level 1), 327 (level 2 40wide), 328 (level 2 80wide).
 
 
-INKEY=--inkey='~~~~~~~~~~~~~~~~~~~~~~~~326
+INKEY=--inkey='~~~~~~~~~~~~~~~~~~~~~~~~252
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~@
 '
-SHOW='--show_vdg_screen=0'
+INKEY=--inkey='~~~'
+SHOW='--show_vdg_screen=1 --show_gime_screen=1'
 
 case "$1" in
 	h1)
@@ -27,25 +28,30 @@ esac
 
 - gorun \
   --tags=coco3,level2,vdg,cocoio,gime gomar.go \
-    -disk ../build-frobio/lemma/OS9DISKS/NOS9_6809_L2_coco3_80d.dsk \
+   -disk ../build-frobio/pizga/Internal/OS9DISKS/NOS9_6809_L2_coco3_80d.dsk \
       -rom_8000 ../toolshed/cocoroms/coco3.rom \
       -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list \
 	  --cart ../build-frobio/axiom41.rom \
 	  -external_rom_listing ../build-frobio/hdbdos.rom.list \
-		  "$INKEY" "$SHOW"   
+		  $SHOW \
+		  "$INKEY"
+#    -disk ../build-frobio/lemma/OS9DISKS/NOS9_6809_L2_coco3_80d.dsk \
+#    -disk ../build-frobio/lemma/LEMMINGS/Rogue512.dsk \
 exit $?
 
-- gorun --tags=coco3,level2,trace,d,vdg,cocoio,gime gomar.go \
-  -disk ../build-frobio/lemma/OS9DISKS/NOS9_6809_L2_coco3_80d.dsk \
-    -rom_8000 ../toolshed/cocoroms/coco3.rom \
-      -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list \
-        --cart ../build-frobio/axiom41.rom \
-	  -external_rom_listing ../build-frobio/hdbdos.rom.list \
-	    --borges /home/strick/borges/  \
-	      --trigger_pc=55944  \
-	        --trigger_count=3  \
-		    -t=10'000'000  \
-		  "$INKEY" "$SHOW"
+
+
+#- gorun --tags=coco3,level2,trace,d,vdg,cocoio,gime gomar.go \
+#  -disk ../build-frobio/lemma/OS9DISKS/NOS9_6809_L2_coco3_80d.dsk \
+#    -rom_8000 ../toolshed/cocoroms/coco3.rom \
+#      -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list \
+#        --cart ../build-frobio/axiom41.rom \
+#	  -external_rom_listing ../build-frobio/hdbdos.rom.list \
+#	    --borges /home/strick/borges/  \
+#	      --trigger_pc=55944  \
+#	        --trigger_count=3  \
+#		    -t=10'000'000  \
+#		  "$INKEY" "$SHOW"
 
 
 

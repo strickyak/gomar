@@ -8,6 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"  // Command stty
+
+	. "github.com/strickyak/gomar/gu"
 )
 
 const INKEY1 = `
@@ -101,10 +104,12 @@ const INKEY2 = `
 
 var flagN = flag.Bool("n", false, "Disable (third) reading keystrokes from stdin")
 var flagInkey = flag.String("inkey", "", "(second) Inject keystrokes")
-var flagInkeyFile = flag.String("inkey_file", INKEY1, "Filename from which to (first) inject keystrokes")
+var flagInkeyFile = flag.String("inkey_file", "", "Filename from which to (first) inject keystrokes")
 
 func InputRoutine(keystrokes chan<- byte) {
+	// Start with the --inkey flag.
 	s := *flagInkey
+	// But if the --inkey_file flag is set, insert that in front.
 	if *flagInkeyFile != "" {
 		bb, err := ioutil.ReadFile(*flagInkeyFile)
 		if err != nil {
@@ -112,6 +117,7 @@ func InputRoutine(keystrokes chan<- byte) {
 		}
 		s = string(bb) + s
 	}
+	// Use all the flag chars.
 	for s != "" {
 		ch := s[0]
 		if ch == '\n' {
@@ -124,15 +130,45 @@ func InputRoutine(keystrokes chan<- byte) {
 		s = s[1:]
 	}
 
+	// Do not read stdin if -n flag (like the -n flag to ssh).
 	if *flagN {
 		return
 	}
-	in := bufio.NewScanner(os.Stdin)
-	for in.Scan() {
-		for _, r := range in.Text() {
-			keystrokes <- byte(r)
+	// Do read stdin.
+	if true {
+		// e := exec.Command("stty", "-cbreak").Run()
+		cmd := &exec.Cmd{
+			Path: "/usr/bin/stty",
+			Args: []string{"stty", "cbreak"},
+			Stdin: os.Stdin,
+			Stdout: os.Stdout,
+			Stderr: os.Stderr,
 		}
-		keystrokes <- '\r'
+		e := cmd.Run()
+		// e := exec.Command("sh", "-c", "stty -cbreak").Run()
+		Check( e )
+		log.Printf("ZXC === stty -cbreak ===")
+		char1 := make([]byte, 1)
+		for {
+			nn, err := os.Stdin.Read(char1)
+			if err != nil {
+				log.Panicf("os.Stdin.Read (* stty -cbreak *): %v", char1)
+			}
+			if nn != 1 {
+				log.Panicf("os.Stdin.Read (* stty -cbreak *): short, want 1, got %d", nn)
+			}
+			c1 := char1[0]
+			log.Printf("ZXC GOT_KEYSTROKE %d.", c1)
+			keystrokes <- Cond(c1 == 10 , '\r' , c1)
+		}
+	} else {
+		in := bufio.NewScanner(os.Stdin)
+		for in.Scan() {
+			for _, r := range in.Text() {
+				keystrokes <- byte(r)
+			}
+			keystrokes <- '\r'
+		}
 	}
 	close(keystrokes)
 	log.Fatal("Stdin ended")

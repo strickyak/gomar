@@ -27,6 +27,13 @@ type Gime struct {
 	VDG     *VDG
 }
 
+func (o *Gime) String() string {
+	return fmt.Sprintf("{drt=%v ncol=%d nrow=%d V=%d Addr=$%x Len=$%x PRMTy=%d,%d,%d,%d}",
+		o.Dirty, o.NumCols, o.NumRows, o.V,
+		o.Addr, o.Len,
+		o.P, o.R, o.M, o.Ty)
+}
+
 func NewGime() Screen {
 	n := uint(64 * 25)
 	return &Gime{
@@ -61,24 +68,48 @@ func (o *Gime) Tick(step int64) {
 		nc := p.AlphaCharsPerRow
 		cShift := Cond(p.AlphaHasAttrs, 1, 0)
 
-		fmt.Printf("=-=-=-=-=-=-=-=-=-= #%d  gime %02x %02x \n", step, o.Ports[0x90], o.Ports[0x91])
+		//NormalColorXterm()
+		fmt.Printf("=-=-=-=-=-=-=-=-=-= #%d  gime %02x %02x :: %v\n", step, o.Ports[0x90], o.Ports[0x91], p)
 		for r := 0; r < o.NumRows; r++ {
 			var bb bytes.Buffer
 			bb.WriteByte('|')
 			for c := 0; c < nc; c++ {
-				x := mem[o.Addr+(uint(c+r*nc)<<cShift)]
-				if x < 32 || 126 < x {
-					x = '~'
+				ch := mem[o.Addr+(uint(c+r*nc)<<cShift)]
+				attr := mem[o.Addr+(uint(c+r*nc)<<cShift)+1]
+
+				bgI , fgI := (attr>>0)&7, (attr>>3)&7
+				bg := o.Ports[0xB0 + bgI]
+				fg := o.Ports[0xB8 + fgI]
+
+				bgR := ((bg >> 4)&2) | ((bg>>2)&1)
+				bgG := ((bg >> 3)&2) | ((bg>>1)&1)
+				bgB := ((bg >> 2)&2) | ((bg>>0)&1)
+
+				fgR := ((fg >> 4)&2) | ((fg>>2)&1)
+				fgG := ((fg >> 3)&2) | ((fg>>1)&1)
+				fgB := ((fg >> 2)&2) | ((fg>>0)&1)
+
+				if ch < 32 || 126 < ch {
+					ch = '~'
 				}
-				bb.WriteByte(x)
+				FgBgColorXterm(&bb, fgR, fgG, fgB, bgR, bgG, bgB)
+
+				bb.WriteByte(ch)
 			}
+			NormalColorXterm(&bb)
 			bb.WriteByte('|')
 			for c := 0; c < nc; c++ {
-				x := mem[o.Addr+(uint(c+r*nc)<<cShift)]
-				fmt.Fprintf(&bb, " %02x", x)
+				ch := mem[o.Addr+(uint(c+r*nc)<<cShift)]  // char
+				attr := mem[o.Addr+(uint(c+r*nc)<<cShift)+1]  // attr (if attrs)
+				if p.AlphaHasAttrs {
+					fmt.Fprintf(&bb, "%c%02x", Cond((attr&0x07)==0, '-' , '+'), ch)
+				} else {
+					fmt.Fprintf(&bb, " %02x", ch)
+				}
 			}
 			fmt.Printf("%s\n", bb.String())
 		}
+		//NormalColorXterm()
 		fmt.Printf("=-=-=-=-=-=-=-=-=-= #%d\n", step)
 
 	}
@@ -143,6 +174,16 @@ type CocoDisplayParams struct {
 	AlphaCharsPerRow    int
 	AlphaHasAttrs       bool
 	ColorMap            [16]byte
+}
+
+func (o *CocoDisplayParams) String()string {
+	return fmt.Sprintf("bt%v gim%v gx%v att%v vo$%x ho$%x vs$%x ",
+		o.BasicText, o.Gime, o.Graphics, o.AttrsIfAlpha,
+		o.VirtOffsetAddr, o.HorzOffsetAddr,
+		o.VirtScroll) +
+	fmt.Sprintf("HRES$%x CRES$%x HVEN%v ",
+		o.HRES, o.CRES, o.HVEN) +
+	fmt.Sprintf("cpr$%x attrs%v", o.AlphaCharsPerRow, o.AlphaHasAttrs)
 }
 
 func ExplainColor(b byte) string {
