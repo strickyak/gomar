@@ -172,7 +172,7 @@ func GetBytesTask0(addr Word, n Word) []byte {
 	}()
 
 	var bb []byte
-	for i:=Word(0); i<n; i++ {
+	for i := Word(0); i < n; i++ {
 		bb = append(bb, PeekB(addr+i))
 	}
 	return bb
@@ -560,7 +560,7 @@ func DoDumpAllPathDescs() {
 		PrettyDumpHex64(p, 64)
 
 		for i := Word(0); i < 64; i++ {
-			q := Word(B(p + i)) << 8
+			q := Word(B(p+i)) << 8
 			if q != 0 {
 				L("PathDesc[%x]: %x", i, q)
 

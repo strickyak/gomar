@@ -3,10 +3,10 @@ package gu // Go Utilities for gomar.
 import (
 	"bytes"
 	"flag"
-	"log"
-	"runtime"
-	"path"
 	"fmt"
+	"log"
+	"path"
+	"runtime"
 )
 
 var (
@@ -15,7 +15,7 @@ var (
 	FlagInitialVerbosity = flag.String("v", "", "Initial verbosity chars") // Initial Verbosity
 )
 
-func T(args ... any) {
+func T(args ...any) {
 	var bb bytes.Buffer
 	fmt.Fprintf(&bb, "#")
 	for i := 5; i > 0; i-- {

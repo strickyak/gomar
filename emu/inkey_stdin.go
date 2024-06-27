@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"  // Command stty
+	"os/exec" // Command stty
 
 	. "github.com/strickyak/gomar/gu"
 )
@@ -138,15 +138,15 @@ func InputRoutine(keystrokes chan<- byte) {
 	if true {
 		// e := exec.Command("stty", "-cbreak").Run()
 		cmd := &exec.Cmd{
-			Path: "/usr/bin/stty",
-			Args: []string{"stty", "cbreak"},
-			Stdin: os.Stdin,
+			Path:   "/usr/bin/stty",
+			Args:   []string{"stty", "cbreak"},
+			Stdin:  os.Stdin,
 			Stdout: os.Stdout,
 			Stderr: os.Stderr,
 		}
 		e := cmd.Run()
 		// e := exec.Command("sh", "-c", "stty -cbreak").Run()
-		Check( e )
+		Check(e)
 		log.Printf("ZXC === stty -cbreak ===")
 		char1 := make([]byte, 1)
 		for {
@@ -159,7 +159,7 @@ func InputRoutine(keystrokes chan<- byte) {
 			}
 			c1 := char1[0]
 			log.Printf("ZXC GOT_KEYSTROKE %d.", c1)
-			keystrokes <- Cond(c1 == 10 , '\r' , c1)
+			keystrokes <- Cond(c1 == 10, '\r', c1)
 		}
 	} else {
 		in := bufio.NewScanner(os.Stdin)

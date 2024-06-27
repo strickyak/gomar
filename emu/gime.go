@@ -77,17 +77,17 @@ func (o *Gime) Tick(step int64) {
 				ch := mem[o.Addr+(uint(c+r*nc)<<cShift)]
 				attr := mem[o.Addr+(uint(c+r*nc)<<cShift)+1]
 
-				bgI , fgI := (attr>>0)&7, (attr>>3)&7
-				bg := o.Ports[0xB0 + bgI]
-				fg := o.Ports[0xB8 + fgI]
+				bgI, fgI := (attr>>0)&7, (attr>>3)&7
+				bg := o.Ports[0xB0+bgI]
+				fg := o.Ports[0xB8+fgI]
 
-				bgR := ((bg >> 4)&2) | ((bg>>2)&1)
-				bgG := ((bg >> 3)&2) | ((bg>>1)&1)
-				bgB := ((bg >> 2)&2) | ((bg>>0)&1)
+				bgR := ((bg >> 4) & 2) | ((bg >> 2) & 1)
+				bgG := ((bg >> 3) & 2) | ((bg >> 1) & 1)
+				bgB := ((bg >> 2) & 2) | ((bg >> 0) & 1)
 
-				fgR := ((fg >> 4)&2) | ((fg>>2)&1)
-				fgG := ((fg >> 3)&2) | ((fg>>1)&1)
-				fgB := ((fg >> 2)&2) | ((fg>>0)&1)
+				fgR := ((fg >> 4) & 2) | ((fg >> 2) & 1)
+				fgG := ((fg >> 3) & 2) | ((fg >> 1) & 1)
+				fgB := ((fg >> 2) & 2) | ((fg >> 0) & 1)
 
 				if ch < 32 || 126 < ch {
 					ch = '~'
@@ -99,10 +99,10 @@ func (o *Gime) Tick(step int64) {
 			NormalColorXterm(&bb)
 			bb.WriteByte('|')
 			for c := 0; c < nc; c++ {
-				ch := mem[o.Addr+(uint(c+r*nc)<<cShift)]  // char
-				attr := mem[o.Addr+(uint(c+r*nc)<<cShift)+1]  // attr (if attrs)
+				ch := mem[o.Addr+(uint(c+r*nc)<<cShift)]     // char
+				attr := mem[o.Addr+(uint(c+r*nc)<<cShift)+1] // attr (if attrs)
 				if p.AlphaHasAttrs {
-					fmt.Fprintf(&bb, "%c%02x", Cond((attr&0x07)==0, '-' , '+'), ch)
+					fmt.Fprintf(&bb, "%c%02x", Cond((attr&0x07) == 0, '-', '+'), ch)
 				} else {
 					fmt.Fprintf(&bb, " %02x", ch)
 				}
@@ -176,14 +176,14 @@ type CocoDisplayParams struct {
 	ColorMap            [16]byte
 }
 
-func (o *CocoDisplayParams) String()string {
+func (o *CocoDisplayParams) String() string {
 	return fmt.Sprintf("bt%v gim%v gx%v att%v vo$%x ho$%x vs$%x ",
 		o.BasicText, o.Gime, o.Graphics, o.AttrsIfAlpha,
 		o.VirtOffsetAddr, o.HorzOffsetAddr,
 		o.VirtScroll) +
-	fmt.Sprintf("HRES$%x CRES$%x HVEN%v ",
-		o.HRES, o.CRES, o.HVEN) +
-	fmt.Sprintf("cpr$%x attrs%v", o.AlphaCharsPerRow, o.AlphaHasAttrs)
+		fmt.Sprintf("HRES$%x CRES$%x HVEN%v ",
+			o.HRES, o.CRES, o.HVEN) +
+		fmt.Sprintf("cpr$%x attrs%v", o.AlphaCharsPerRow, o.AlphaHasAttrs)
 }
 
 func ExplainColor(b byte) string {

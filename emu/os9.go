@@ -576,7 +576,7 @@ func Os9StringN(addr Word, n Word) string {
 
 func StringSomeBytesWithMapping(addr Word, mapping Mapping) string {
 	var buf bytes.Buffer
-	for i:=0; i < 16; i++ {
+	for i := 0; i < 16; i++ {
 		var b byte = PeekBWithMapping(addr, mapping)
 		fmt.Fprintf(&buf, "%2x", b)
 	}
@@ -585,7 +585,7 @@ func StringSomeBytesWithMapping(addr Word, mapping Mapping) string {
 
 func SomeBytesWithMapping(addr Word, mapping Mapping) []byte {
 	var bb []byte
-	for i:=Word(0); i < 16; i++ {
+	for i := Word(0); i < 16; i++ {
 		var b byte = PeekBWithMapping(addr+i, mapping)
 		bb = append(bb, b)
 	}

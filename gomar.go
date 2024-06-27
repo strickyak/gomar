@@ -1,5 +1,4 @@
 /*
-
 Gomar is an emulator for the Radio Shack Color Computer
 (type 1, 2, and 3) and the Motorola 6809 CPU.
 
@@ -9,11 +8,13 @@ not on exact hardware emulation and gaming.
 Copyright (C) 2019-2024 Henry Strickland (github.com/strickyak)
 
 Gomar is based on older code "sbc09.c" with the following notices:
-   """
-      created 1994 by L.C. Benschop.
-      copyleft (c) 1994-2014 by the sbc09 team, see AUTHORS for more details.
-      license: GNU General Public License version 2, see LICENSE for more details.
-   """
+
+	"""
+	   created 1994 by L.C. Benschop.
+	   copyleft (c) 1994-2014 by the sbc09 team, see AUTHORS for more details.
+	   license: GNU General Public License version 2, see LICENSE for more details.
+	"""
+
 That code was coverted to Go Language by Henry Strickland in 2019,
 and has been enhanced ever since.
 
@@ -30,7 +31,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
 */
 package main
 

@@ -79,7 +79,7 @@ func (o *VDG) Poke(addr uint, longAddr uint, x byte) {
 	if 0xFFC0 <= addr && addr < 0xFFE0 {
 		o.changeBit(addr)
 	} else if o.Addr <= addr && addr < o.Addr+o.Len {
-		if *FlagSemiGraphicsNotDirty && (x&128)!=0 && (x&15)==15 {
+		if *FlagSemiGraphicsNotDirty && (x&128) != 0 && (x&15) == 15 {
 			// dont set dirty bit
 		} else {
 			o.Dirty = true

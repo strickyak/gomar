@@ -1,9 +1,9 @@
 //go:build main
 
 /*
-  Read an OS9 boot disk image and extract the boot track
-  from track 35.  Write out initial RAM image for gomar,
-  as raw memory bytes, starting at address $0000, and going up.
+Read an OS9 boot disk image and extract the boot track
+from track 35.  Write out initial RAM image for gomar,
+as raw memory bytes, starting at address $0000, and going up.
 */
 package main
 
