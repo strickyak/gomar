@@ -504,6 +504,9 @@ func DoDumpPath(i Word, pth Word) {
 }
 
 func DoDumpDevices() {
+	WithMmuTask(0, DoDumpDevices_Inner)
+}
+func DoDumpDevices_Inner() {
 	/*
 	    983 *********************
 	    984 * Device Table Format
@@ -565,8 +568,9 @@ func DoDumpDevices() {
 		descriptorMod := PeekW(p + 4)
 		managerMod := PeekW(p + 6)
 		count := PeekB(p + 8)
-		if descriptorMod != 0 {
+		if descriptorMod != 0 && managerMod != 0 && count != 0 {
 			Logp("   [%x] p=%x %q=desc=%x %q=driv=%x %q=mgr=%x store=%x count=%x", i, p, ModuleName(descriptorMod), descriptorMod, ModuleName(driverMod), driverMod, ModuleName(managerMod), managerMod, staticStorage, count)
+			Logp("   [%x] p=%x ::  % 3x", i, p, GetBytesTask0(p, devSize))
 			if staticStorage != 0 {
 				PrettyDumpHex64(staticStorage, 0x100)
 			}

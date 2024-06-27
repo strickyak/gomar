@@ -574,6 +574,42 @@ func Os9StringN(addr Word, n Word) string {
 	return buf.String()
 }
 
+func StringSomeBytesWithMapping(addr Word, mapping Mapping) string {
+	var buf bytes.Buffer
+	for i:=0; i < 16; i++ {
+		var b byte = PeekBWithMapping(addr, mapping)
+		fmt.Fprintf(&buf, "%2x", b)
+	}
+	return buf.String()
+}
+
+func SomeBytesWithMapping(addr Word, mapping Mapping) []byte {
+	var bb []byte
+	for i:=Word(0); i < 16; i++ {
+		var b byte = PeekBWithMapping(addr+i, mapping)
+		bb = append(bb, b)
+	}
+	return bb
+}
+
+func Os9StringWithMapping(addr Word, mapping Mapping) string {
+	var buf bytes.Buffer
+	for {
+		var b byte = PeekBWithMapping(addr, mapping)
+		var ch byte = 0x7F & b
+		if '!' <= ch && ch <= '~' {
+			buf.WriteByte(ch)
+		} else {
+			break
+		}
+		if (b & 128) != 0 {
+			break
+		}
+		addr++
+	}
+	return buf.String()
+}
+
 func Os9String(addr Word) string {
 	var buf bytes.Buffer
 	for {
@@ -737,7 +773,8 @@ func CheckExpectation(got string) {
 
 // Returns a string and whether this operation typically returns to caller.
 func DecodeOs9Opcode(b byte) (string, bool) {
-	// MemoryModules()
+	MemoryModules()
+	DoDumpPaths()
 	s, p := "", ""
 	returns := true
 	switch b {
@@ -763,6 +800,7 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 	case 0x05:
 		s = "F$Chain  : Chain Process to New Module"
 		p = F("Module/file='%s' param=%q lang/type=%x pages=%x", Os9String(xreg), Os9StringN(ureg, yreg), GetAReg(), GetBReg())
+		returns = false
 
 	case 0x06:
 		s = "F$Exit   : Terminate Process"
@@ -875,14 +913,21 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 
 	case 0x31:
 		s = "F$Ret64  : Return Process/Path Descriptor"
+		p = F("block_num=%x address=%x", GetAReg(), xreg)
 
 	case 0x32:
 		s = "F$SSvc   : Service Request Table Initialization"
+		p = F("table=%x", yreg)
 
 	case 0x33:
 		s = "F$IODel  : Delete I/O Module"
+		p = F("module=%x", xreg)
 
 		// Level 2:
+	case 0x34:
+		s = "F$SLink  : System Link"
+		mapping := GetMappingTask0(yreg)
+		p = F("%q type %x name@ %x dat@ %x", Os9StringWithMapping(xreg, mapping), GetAReg(), xreg, yreg)
 
 	case 0x38:
 		s = "F$Move   : Move data (low bound first)"
@@ -904,12 +949,21 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 		s = "F$AllTsk : Allocate process Task number"
 		p = F("processDesc=%04x", xreg)
 
+	case 0x40:
+		s = "F$DelTsk : Deallocate Task Number"
+		p = F("proc_desc=%x", xreg)
+
 	case 0x44:
 		s = "F$DATLog : Convert DAT block/offset to Logical Addr"
 		p = F("DatImageOffset=%x blockOffset=%x", GetBReg(), xreg)
 
 	case 0x4B:
 		s = "F$AllPrc : Allocate Process descriptor"
+
+	case 0x4E:
+		s = "F$FModul   : Find Module Directory Entry"
+		mapping := GetMappingTask0(yreg)
+		p = F("%q type %x name@ %x dat@ %x", Os9StringWithMapping(xreg, mapping), GetAReg(), xreg, yreg)
 
 	case 0x4F:
 		s = "F$MapBlk   : Map specific block"

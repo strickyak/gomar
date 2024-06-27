@@ -163,6 +163,20 @@ func WithMmuTask(task byte, fn func()) {
 	fn()
 }
 
+func GetBytesTask0(addr Word, n Word) []byte {
+	// Use Task 0 for the mapping.
+	tmp := MmuTask
+	MmuTask = 0
+	defer func() {
+		MmuTask = tmp
+	}()
+
+	var bb []byte
+	for i:=Word(0); i<n; i++ {
+		bb = append(bb, PeekB(addr+i))
+	}
+	return bb
+}
 func GetMappingTask0(addr Word) Mapping {
 	// Use Task 0 for the mapping.
 	tmp := MmuTask
@@ -212,6 +226,7 @@ func PeekWWithMapping(addr Word, m Mapping) Word {
 	return (Word(hi) << 8) | Word(lo)
 }
 
+/*
 func Os9StringWithMapping(addr Word, m Mapping) string {
 	var buf bytes.Buffer
 	for {
@@ -229,6 +244,7 @@ func Os9StringWithMapping(addr Word, m Mapping) string {
 	}
 	return buf.String()
 }
+*/
 
 func ExplainMMU() string {
 	romText := ""
@@ -543,17 +559,22 @@ func DoDumpAllPathDescs() {
 		AssertEQ(p&255, 0, p)
 		PrettyDumpHex64(p, 64)
 
-		for i := Word(0); i < 32; i++ {
-			q := W(p + i*2)
+		for i := Word(0); i < 64; i++ {
+			q := Word(B(p + i)) << 8
 			if q != 0 {
-				// L("PathDesc[%x]: %x", i, q)
+				L("PathDesc[%x]: %x", i, q)
 
 				for j := Word(0); j < 4; j++ {
 					k := i*4 + j
-					// L("........[%x]: %x", j, k)
 					if k == 0 {
 						continue
 					} // There is no path desc 0 (it's the table of allocs).
+					n := B(q + j*64)
+					if n == 0 {
+						continue
+					}
+					AssertEQ(Word(n), k)
+					L("........[%x]: %x", j, k)
 					DoDumpPathDesc(q + j*64)
 				}
 

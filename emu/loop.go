@@ -501,6 +501,15 @@ func swi() {
 			Os9Description[stack] = ""
 		}
 
+		if *FlagTraceOnOS9 != "" && describe != "" {
+			if RegexpTraceOnOS9 == nil {
+				RegexpTraceOnOS9 = regexp.MustCompile(*FlagTraceOnOS9)
+			}
+			if RegexpTraceOnOS9.MatchString(describe) {
+				*FlagTraceAfter = 1
+			}
+		}
+
 		handler = W(0xfff4)
 	case 2: /* SWI3 */
 		handler = W(0xfff2)
