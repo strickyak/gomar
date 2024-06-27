@@ -122,7 +122,7 @@ func (o *Gime) Poke(addr uint, longAddr uint, x byte) {
 	o.VDG.Poke(addr, longAddr, x)
 
 	if 0xFF80 <= addr && addr < 0xFFC0 {
-		o.Dirty = true
+		//##// o.Dirty = true
 		switch addr {
 		case 0xFF9D:
 			// Start of Video Ram, longAddr, bits 18..11
