@@ -4,8 +4,8 @@ package emu
 
 import (
 	"bytes"
-	"fmt"
 	"flag"
+	"fmt"
 	. "github.com/strickyak/gomar/gu"
 	"github.com/strickyak/gomar/listings"
 	"log"
@@ -63,7 +63,7 @@ func LoadRomListings() {
 	if *FlagInternalRomListing != "" {
 		InternalRomSrc = listings.LoadFile(*FlagInternalRomListing)
 	}
-	if *FlagInternalRomDup != "" {
+	if *FlagInternalRomDup != "" && InternalRomSrc != nil {
 		words := strings.Split(*FlagInternalRomDup, ":")
 		//T(words)
 		//T(len(words))
