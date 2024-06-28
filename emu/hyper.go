@@ -243,7 +243,7 @@ func HyperOp(hop byte) {
 
 	case 107: // Exit
 		log.Printf("*** GOMAR Hyper Exit: %d", dreg)
-		fmt.Printf("*** GOMAR Hyper Exit: %d\n", dreg)
+		fmt.Printf("\n*** GOMAR Hyper Exit: %d\n", dreg)
 		os.Exit(int(dreg))
 
 	case 108: // PrintH

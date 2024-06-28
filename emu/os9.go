@@ -873,6 +873,13 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 
 	// NitrOS9:
 
+	case 0x21:
+		s = "F$NMLink   : Link module, unmapped"
+		p = F("LangType=%02x, %04x='%s'", GetAReg(), xreg, Os9String(xreg))
+	case 0x22:
+		s = "F$NMLoad   : Load modules, unmapped, from file"
+		p = F("LangType=%02x, %04x='%s'", GetAReg(), xreg, Os9String(xreg))
+
 	case 0x27:
 		s = "F$VIRQ   : Install/Delete Virtual IRQ"
 
@@ -928,6 +935,10 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 		s = "F$SLink  : System Link"
 		mapping := GetMappingTask0(yreg)
 		p = F("%q type %x name@ %x dat@ %x", Os9StringWithMapping(xreg, mapping), GetAReg(), xreg, yreg)
+
+	case 0x37:
+		s = "F$GProcP : Get pointer to process"
+		p = F("id=%02x", GetAReg())
 
 	case 0x38:
 		s = "F$Move   : Move data (low bound first)"
@@ -1005,7 +1016,7 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 
 	case 0x86:
 		s = "I$ChgDir : Change Default Directory"
-		p = F("%04x='%s'", xreg, Os9String(xreg))
+		p = F("mode=%02x, %04x='%s'", GetAReg(), xreg, Os9String(xreg))
 
 	case 0x87:
 		s = "I$Delete : Delete File"
