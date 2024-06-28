@@ -410,7 +410,7 @@ actual coco.
 {proc=2"Shell"} t1: OS9$0a <F$Sleep> {ticks=0000} #26066940
 ```
 
-# Short: Both User and Kernel calls, with noisy, less important calls removed.
+## Short: Both User and Kernel calls, with noisy, less important calls removed.
 
 This is the file `_short`
 See the `egrep -v` command above, to see which system calls were filtered out.
@@ -4480,6 +4480,4 @@ This is the file `_kern` from above.
 :   :   <---- t0 OS9$40 <F$DelTsk> {proc_desc=7a00} #26068250 #26068920
 :   {proc=2} t0: OS9$2d <F$NProc> {} #26068974
 ```
-
-
 ## END
