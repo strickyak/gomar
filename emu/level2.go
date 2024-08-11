@@ -359,52 +359,6 @@ func MemoryModules() {
 		L("#MemoryModules)")
 	})
 }
-func PrettyDumpHex64(addr Word, size uint) {
-	// L(";")
-	const PERLINE = 64
-	var p Word
-	for k := uint(0); k < size; k += PERLINE {
-		p = addr + Word(k)
-		var i Word
-		for i = 0; i < PERLINE; i += 2 {
-			if PeekW(p+i) != 0 {
-				break
-			}
-		}
-		if i == PERLINE {
-			continue // don't print all zeros row.
-		}
-		var buf bytes.Buffer
-		Z(&buf, "%04x:", p)
-		for q := Word(0); q < PERLINE; q += 2 {
-			if q&7 == 0 {
-				Z(&buf, " ")
-			}
-			if q&15 == 0 {
-				Z(&buf, " ")
-			}
-			w := PeekW(p + q)
-			if w == 0 {
-				Z(&buf, "---- ")
-			} else {
-				Z(&buf, "%04x ", w)
-			}
-		}
-		for q := Word(0); q < PERLINE; q += 1 {
-			x := PeekB(p + q)
-			if ' ' <= x && x <= '~' {
-				Z(&buf, "%c", x)
-			} else {
-				Z(&buf, ".")
-			}
-			if (q & 7) == 7 {
-				Z(&buf, "|")
-			}
-		}
-		L("%s", buf.String())
-	}
-	// L(";")
-}
 
 func DoDumpProcsAndPaths() {
 	WithMmuTask(0, DoDumpProcsAndPathsPrime)

@@ -4,15 +4,12 @@ package emu
 
 import (
 	"bytes"
-	"flag"
 	"fmt"
 	. "github.com/strickyak/gomar/gu"
 	"github.com/strickyak/gomar/listings"
 	"log"
 	"strings"
 )
-
-var CopicoFlag = flag.Bool("copico", false, "allow FF7[AB]")
 
 // 'Assembly Language Programming for the CoCo 3 (1987)(Laurence A Tepolt).pdf'
 // figure 3-5
@@ -137,11 +134,11 @@ func GetIOByteI(a Word) byte {
 	}
 
 	switch a {
-	case 0xFF7A, 0xFF7B:
-		if !*CopicoFlag {
-			log.Panicf("UNKNOWN GetGimeIOByte address: 0x%04x (did you mean --copico=true ?)", a)
-		}
-		return '$'
+	case 0xFF78,
+		0xFF79,
+		0xFF7a,
+		0xFF7b:
+		return GetCopico(a)
 
 	/* PIA 0 */
 	case 0xFF00:
@@ -285,10 +282,11 @@ func PutIOByte(a Word, b byte) {
 	default:
 		log.Panicf("UNKNOWN PutIOByte address: 0x%04x", a)
 
-	case 0xFF7A, 0xFF7B:
-		if !*CopicoFlag {
-			log.Panicf("UNKNOWN PutGimeIOByte address: 0x%04x (did you mean --copico=true ?)", a)
-		}
+	case 0xFF78,
+		0xFF79,
+		0xFF7a,
+		0xFF7b:
+		PutCopico(a, b)
 
 	// http://tlindner.macmess.org/wp-content/uploads/2006/09/cocopias-R3.pdf
 	case 0xFF02:

@@ -1,22 +1,17 @@
 package emu
 
 import (
-	//"github.com/strickyak/gomar/display"
-	//"github.com/strickyak/gomar/sym"
-	. "github.com/strickyak/gomar/gu"
-
-	//"bufio"
-	//"bytes"
-	//"flag"
-	//"fmt"
-	//"io/ioutil"
+    "bufio"
+    "bytes"
+	"flag"
+    "fmt"
 	"log"
-	//"os"
-	//"regexp"
-	//"sort"
-	//"strconv"
-	//"strings"
+    "os"
+
+	. "github.com/strickyak/gomar/gu"
 )
+
+var FlagDump = flag.String("dump", "/tmp/dump", "directory for dump hex files")
 
 var _ = Log // use gu
 
@@ -275,6 +270,68 @@ func PeekBWithInt(addr int) byte {
 	return PeekB(Word(addr))
 }
 
+var dumpFileSerial int
+func PrettyDumpHex64(addr Word, size uint) {
+	w := L  // default logger
+	if size >= 0x1000 { // 8K or more
+		os.Mkdir(*FlagDump, 0755)
+		filename := Fmt("%s/dump-%06d", *FlagDump, dumpFileSerial)
+		wfd := Value(os.Create(filename))
+		dumpFileSerial++
+		wbuf := bufio.NewWriter(wfd)
+		w = func(format string, args...any) {
+			fmt.Fprintf(wbuf, format, args...)
+		}
+		L("BIG DUMP(addr=%04x,size=%04x) --> %q <-- big dump", addr, size, filename)
+	}
+	// w(";")
+	const PERLINE = 64
+	var p Word
+	for k := uint(0); k < size; k += PERLINE {
+		p = addr + Word(k)
+		var i Word
+		for i = 0; i < PERLINE; i += 2 {
+			if PeekW(p+i) != 0 {
+				break
+			}
+		}
+		if i == PERLINE {
+			continue // don't print all zeros row.
+		}
+		var buf bytes.Buffer
+		Z(&buf, "%04x:", p)
+		for q := Word(0); q < PERLINE; q += 2 {
+			if q&7 == 0 {
+				Z(&buf, " ")
+			}
+			if q&15 == 0 {
+				Z(&buf, " ")
+			}
+			w := PeekW(p + q)
+			if w == 0 {
+				Z(&buf, "---- ")
+			} else {
+				Z(&buf, "%04x ", w)
+			}
+		}
+		Z(&buf, "|")
+		for q := Word(0); q < PERLINE; q += 1 {
+			x := PeekB(p + q)
+			if ' ' <= x && x <= '~' {
+				Z(&buf, "%c", x)
+			} else if x==0 {
+				Z(&buf, "-")  // matches typing "----" above
+			} else {
+				Z(&buf, ".")
+			}
+			if (q & 7) == 7 {
+				Z(&buf, "|")
+			}
+		}
+		w("%s", buf.String())
+	}
+	// w(";")
+}
 /*
 Two Megabits and Beyond:
 
