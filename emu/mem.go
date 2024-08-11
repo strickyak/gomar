@@ -1,12 +1,12 @@
 package emu
 
 import (
-    "bufio"
-    "bytes"
+	"bufio"
+	"bytes"
 	"flag"
-    "fmt"
+	"fmt"
 	"log"
-    "os"
+	"os"
 
 	. "github.com/strickyak/gomar/gu"
 )
@@ -271,15 +271,16 @@ func PeekBWithInt(addr int) byte {
 }
 
 var dumpFileSerial int
+
 func PrettyDumpHex64(addr Word, size uint) {
-	w := L  // default logger
+	w := L              // default logger
 	if size >= 0x1000 { // 8K or more
 		os.Mkdir(*FlagDump, 0755)
 		filename := Fmt("%s/dump-%06d", *FlagDump, dumpFileSerial)
 		wfd := Value(os.Create(filename))
 		dumpFileSerial++
 		wbuf := bufio.NewWriter(wfd)
-		w = func(format string, args...any) {
+		w = func(format string, args ...any) {
 			fmt.Fprintf(wbuf, format, args...)
 		}
 		L("BIG DUMP(addr=%04x,size=%04x) --> %q <-- big dump", addr, size, filename)
@@ -319,8 +320,8 @@ func PrettyDumpHex64(addr Word, size uint) {
 			x := PeekB(p + q)
 			if ' ' <= x && x <= '~' {
 				Z(&buf, "%c", x)
-			} else if x==0 {
-				Z(&buf, "-")  // matches typing "----" above
+			} else if x == 0 {
+				Z(&buf, "-") // matches typing "----" above
 			} else {
 				Z(&buf, ".")
 			}
@@ -332,6 +333,7 @@ func PrettyDumpHex64(addr Word, size uint) {
 	}
 	// w(";")
 }
+
 /*
 Two Megabits and Beyond:
 

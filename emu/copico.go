@@ -20,9 +20,9 @@ var Copico = struct {
 }{}
 
 func CopicoInit() {
-    if Copico.conn != nil {
-        return
-    }
+	if Copico.conn != nil {
+		return
+	}
 
 	Assert(*FlagCopicoServer != "")
 
@@ -43,7 +43,7 @@ func CopicoInit() {
 func GetCopico(a Word) (z byte) {
 	fmt.Printf("GetCopico(%04x) ...\n", a)
 	log.Printf("GetCopico(%04x) ...", a)
-    CopicoInit()
+	CopicoInit()
 	p := &Copico
 	Assert(p.conn != nil)
 	switch a {
@@ -54,11 +54,11 @@ func GetCopico(a Word) (z byte) {
 	case 0xFF7A:
 		n := byte(len(p.tx))
 		i := n - p.c
-	    fmt.Printf("    n=%d c=%d i=%d z=...\n", n, p.c, i)
-	    log.Printf("    n=%d c=%d i=%d z=...\n", n, p.c, i)
+		fmt.Printf("    n=%d c=%d i=%d z=...\n", n, p.c, i)
+		log.Printf("    n=%d c=%d i=%d z=...\n", n, p.c, i)
 		z = p.tx[i]
-	    fmt.Printf("    n=%d c=%d i=%d z=%d\n", n, p.c, i, z)
-	    log.Printf("    n=%d c=%d i=%d z=%d\n", n, p.c, i, z)
+		fmt.Printf("    n=%d c=%d i=%d z=%d\n", n, p.c, i, z)
+		log.Printf("    n=%d c=%d i=%d z=%d\n", n, p.c, i, z)
 		p.c--
 
 		if p.c == 0 {
@@ -78,7 +78,7 @@ func GetCopico(a Word) (z byte) {
 func PutCopico(a Word, b byte) {
 	fmt.Printf("PutCopico(%04x <- $%02x) ...\n", a, b)
 	log.Printf("PutCopico(%04x <- $%02x) ...", a, b)
-    CopicoInit()
+	CopicoInit()
 	p := &Copico
 	Assert(p.conn != nil)
 	switch a {
@@ -106,8 +106,8 @@ func PutCopico(a Word, b byte) {
 		AssertLE(1, p.c)
 		n := byte(len(p.rx))
 		i := n - p.c
-	    fmt.Printf("    n=%d c=%d i=%d b=%d\n", n, p.c, i, b)
-	    log.Printf("    n=%d c=%d i=%d b=%d\n", n, p.c, i, b)
+		fmt.Printf("    n=%d c=%d i=%d b=%d\n", n, p.c, i, b)
+		log.Printf("    n=%d c=%d i=%d b=%d\n", n, p.c, i, b)
 		p.rx[i] = b
 		p.c--
 
