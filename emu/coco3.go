@@ -858,3 +858,39 @@ func InitializeVectors() {
 	PutW(0xFFF8, 0xFEF7) // IRQ
 	PutW(0xFFF6, 0xFEF4) // FIRQ
 }
+
+func StringSomeBytesWithMapping(addr Word, mapping Mapping) string {
+	var buf bytes.Buffer
+	for i := 0; i < 16; i++ {
+		var b byte = PeekBWithMapping(addr, mapping)
+		fmt.Fprintf(&buf, "%2x", b)
+	}
+	return buf.String()
+}
+
+func SomeBytesWithMapping(addr Word, mapping Mapping) []byte {
+	var bb []byte
+	for i := Word(0); i < 16; i++ {
+		var b byte = PeekBWithMapping(addr+i, mapping)
+		bb = append(bb, b)
+	}
+	return bb
+}
+
+func Os9StringWithMapping(addr Word, mapping Mapping) string {
+	var buf bytes.Buffer
+	for {
+		var b byte = PeekBWithMapping(addr, mapping)
+		var ch byte = 0x7F & b
+		if '!' <= ch && ch <= '~' {
+			buf.WriteByte(ch)
+		} else {
+			break
+		}
+		if (b & 128) != 0 {
+			break
+		}
+		addr++
+	}
+	return buf.String()
+}

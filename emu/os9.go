@@ -574,42 +574,6 @@ func Os9StringN(addr Word, n Word) string {
 	return buf.String()
 }
 
-func StringSomeBytesWithMapping(addr Word, mapping Mapping) string {
-	var buf bytes.Buffer
-	for i := 0; i < 16; i++ {
-		var b byte = PeekBWithMapping(addr, mapping)
-		fmt.Fprintf(&buf, "%2x", b)
-	}
-	return buf.String()
-}
-
-func SomeBytesWithMapping(addr Word, mapping Mapping) []byte {
-	var bb []byte
-	for i := Word(0); i < 16; i++ {
-		var b byte = PeekBWithMapping(addr+i, mapping)
-		bb = append(bb, b)
-	}
-	return bb
-}
-
-func Os9StringWithMapping(addr Word, mapping Mapping) string {
-	var buf bytes.Buffer
-	for {
-		var b byte = PeekBWithMapping(addr, mapping)
-		var ch byte = 0x7F & b
-		if '!' <= ch && ch <= '~' {
-			buf.WriteByte(ch)
-		} else {
-			break
-		}
-		if (b & 128) != 0 {
-			break
-		}
-		addr++
-	}
-	return buf.String()
-}
-
 func Os9String(addr Word) string {
 	var buf bytes.Buffer
 	for {
@@ -929,64 +893,50 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 	case 0x33:
 		s = "F$IODel  : Delete I/O Module"
 		p = F("module=%x", xreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 		// Level 2:
 	case 0x34:
-		s = "F$SLink  : System Link"
-		mapping := GetMappingTask0(yreg)
-		p = F("%q type %x name@ %x dat@ %x", Os9StringWithMapping(xreg, mapping), GetAReg(), xreg, yreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x37:
-		s = "F$GProcP : Get pointer to process"
-		p = F("id=%02x", GetAReg())
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x38:
-		s = "F$Move   : Move data (low bound first)"
-		p = F("srcTask=%x destTask=%x srcPtr=%04x destPtr=%04x size=%04x", GetAReg(), GetBReg(), xreg, ureg, yreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x39:
-		s = "F$AllRAM : Allocate RAM blocks"
-		p = F("numBlocks=%x", GetBReg())
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x3A:
-		s = "F$AllImg : Allocate Image RAM blocks"
-		p = F("beginBlock=%x numBlocks=%x processDesc=%04x", GetAReg(), GetBReg(), xreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x3B:
-		s = "F$DelImg : Deallocate Image RAM blocks"
-		p = F("beginBlock=%x numBlocks=%x processDesc=%04x", GetAReg(), GetBReg(), xreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x3F:
-		s = "F$AllTsk : Allocate process Task number"
-		p = F("processDesc=%04x", xreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x40:
-		s = "F$DelTsk : Deallocate Task Number"
-		p = F("proc_desc=%x", xreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x44:
-		s = "F$DATLog : Convert DAT block/offset to Logical Addr"
-		p = F("DatImageOffset=%x blockOffset=%x", GetBReg(), xreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x4B:
-		s = "F$AllPrc : Allocate Process descriptor"
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x4E:
-		s = "F$FModul   : Find Module Directory Entry"
-		mapping := GetMappingTask0(yreg)
-		p = F("%q type %x name@ %x dat@ %x", Os9StringWithMapping(xreg, mapping), GetAReg(), xreg, yreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x4F:
-		s = "F$MapBlk   : Map specific block"
-		p = F("beginningBlock=%x numBlocks=%x", xreg, GetBReg())
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x50:
-		s = "F$ClrBlk : Clear specific Block"
-		p = F("numBlocks=%x firstBlock=%x", GetBReg(), ureg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x51:
-		s = "F$DelRam : Deallocate RAM blocks"
-		p = F("numBlocks=%x firstBlock=%x", GetBReg(), xreg)
+        s, p, returns = DecodeOs9Level2Opcode(b)
 
 	// IOMan:
 
