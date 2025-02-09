@@ -5,7 +5,7 @@ package emu
 import (
 	//NODISPLAY// "github.com/strickyak/gomar/display"
 	. "github.com/strickyak/gomar/gu"
-	"github.com/strickyak/gomar/sym"
+	// "github.com/strickyak/gomar/sym"
 
 	"bufio"
 	"bytes"
@@ -422,6 +422,7 @@ const (
 	AttachModeReadWrite
 )
 
+/*
 func Os9HypervisorCall(syscall byte) bool {
 	handled := false
 	L("Hyp::%x", syscall)
@@ -461,6 +462,7 @@ func Os9HypervisorCall(syscall byte) bool {
 	}
 	return handled
 }
+*/
 
 const MaxInt64 = 0x7FFFFFFFFFFFFFFF
 

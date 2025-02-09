@@ -190,10 +190,10 @@ func MapAddr(logical Word, quiet bool) int {
 }
 
 func DoDumpPaths() {
-    log.Printf("TODO: DoDumpPaths for Level1");
+	log.Printf("TODO: DoDumpPaths for Level1")
 }
 
 func DecodeOs9Level2Opcode(b byte) (s string, p string, returns bool) {
-    log.Panicf("DecodeOs9Level2Opcode: Level2 opcode in Level1? $%02x", b)
-    panic(0)
+	log.Panicf("DecodeOs9Level2Opcode: Level2 opcode in Level1? $%02x", b)
+	panic(0)
 }

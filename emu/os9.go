@@ -1,3 +1,5 @@
+//go:build level1 || level2
+
 package emu
 
 import (
@@ -687,54 +689,6 @@ func Regs() string {
 	return buf.String()
 }
 
-var Expectations []string
-
-func InitExpectations() {
-	if *FlagExpectFile != "" && Expectations == nil {
-		bb := Value(os.ReadFile(*FlagExpectFile))
-		Expectations = strings.Split(string(bb), "\n")
-	}
-	if *FlagExpect != "" && Expectations == nil {
-		Expectations = strings.Split(*FlagExpect, ";")
-		fmt.Printf("\n===@=== SET Expectations: %q\n", *FlagExpect)
-		log.Printf("\n===@=== SET Expectations: %q\n", *FlagExpect)
-	}
-}
-
-func CheckExpectation(got string) {
-	// Skip out if no expectations were defined.
-	if len(Expectations) == 0 {
-		return
-	}
-
-	// Skip empty expectations
-	for len(Expectations) > 0 && len(Expectations[0]) == 0 {
-		Expectations = Expectations[1:]
-	}
-
-	// Process one expectation, if possible, if valid.
-	if len(Expectations) > 0 {
-		if strings.Contains(got, Expectations[0]) {
-			fmt.Printf("\n===@=== GOT Expectation: %q\n", Expectations[0])
-			log.Printf("\n===@=== GOT Expectation: %q\n", Expectations[0])
-			Expectations = Expectations[1:]
-
-		}
-	}
-
-	// Skip empty expectations
-	for len(Expectations) > 0 && len(Expectations[0]) == 0 {
-		Expectations = Expectations[1:]
-	}
-
-	// Exit(0) if all expectations are met.
-	if len(Expectations) == 0 {
-		fmt.Printf("\n===@=== SUCCESS -- FINISHED Expectations.\n")
-		log.Printf("\n===@=== SUCCESS -- FINISHED Expectations.\n")
-		os.Exit(0)
-	}
-}
-
 // Returns a string and whether this operation typically returns to caller.
 func DecodeOs9Opcode(b byte) (string, bool) {
 	MemoryModules()
@@ -893,50 +847,50 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 	case 0x33:
 		s = "F$IODel  : Delete I/O Module"
 		p = F("module=%x", xreg)
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 		// Level 2:
 	case 0x34:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x37:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x38:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x39:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x3A:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x3B:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x3F:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x40:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x44:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x4B:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x4E:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x4F:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x50:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	case 0x51:
-        s, p, returns = DecodeOs9Level2Opcode(b)
+		s, p, returns = DecodeOs9Level2Opcode(b)
 
 	// IOMan:
 
@@ -1035,4 +989,207 @@ func DecodeOs9Opcode(b byte) (string, bool) {
 		s, _ = sym.SysCallNames[b]
 	}
 	return F("OS9$%02x <%s> {%s} #%d", b, s, p, Cycles), returns
+}
+
+func ScanRamForOs9Modules() []*ModuleFound {
+	var z []*ModuleFound
+	for i := 256; i < len(mem)-256; i++ {
+		if mem[i] == 0x87 && mem[i+1] == 0xCD {
+
+			parity := byte(255)
+			// var buf bytes.Buffer
+			for j := 0; j < 9; j++ {
+				parity ^= mem[i+j]
+				// fmt.Fprintf(&buf, " %02x", mem[i+j])
+			}
+			// log.Printf("  for parity: %s", buf.String())
+
+			if parity == 0 {
+				sz := int(HiLo(mem[i+2], mem[i+3]))
+				nameAddr := i + int(HiLo(mem[i+4], mem[i+5]))
+				got := uint32(HiMidLo(mem[i+sz-3], mem[i+sz-2], mem[i+sz-1]))
+				crc := 0xFFFFFF ^ Os9CRC(mem[i:i+sz])
+				if got == crc {
+					log.Printf("SCAN (at $%x to $%x sz $%x) %q %06x %06x", i, i+sz, sz, Os9StringPhys(nameAddr), mem[i+sz-3:i+sz], 0xFFFFFF^Os9CRC(mem[i:i+sz]))
+					z = append(z, &ModuleFound{
+						Addr: uint32(i),
+						Len:  uint32(sz),
+						CRC:  crc,
+						Name: Os9StringPhys(nameAddr),
+					})
+				} else {
+					log.Printf("SCAN BAD CRC (@%04x) %06x %06x", i, got, crc)
+
+				}
+			} else {
+				log.Printf("SCAN BAD PARITY (@%04x) %02x", i, parity)
+			}
+		}
+	}
+	return z
+}
+
+func PreRTI() {
+	//if Cycles >= *FlagTraceAfter {
+	DoDumpProcsAndPathsPrime()
+	DoDumpSysMap()
+	//}
+
+	stack := MapAddr(sreg, true /*quiet*/)
+	describe := Os9Description[stack]
+
+	if *FlagTraceOnOS9 != "" && describe != "" {
+		if RegexpTraceOnOS9 == nil {
+			RegexpTraceOnOS9 = regexp.MustCompile(*FlagTraceOnOS9)
+		}
+		if RegexpTraceOnOS9.MatchString(describe) {
+			*FlagTraceAfter = 1
+		}
+	}
+}
+
+func PostRTI() {
+	back3 := B(pcreg - 3)
+	back2 := B(pcreg - 2)
+	back1 := B(pcreg - 1)
+	if back3 == 0x10 && back2 == 0x3f && describe != "" {
+		if (ccreg & 1 /* carry bit indicates error */) != 0 {
+			errcode := GetBReg()
+
+			luser := 0
+			if Level == 1 && dpreg != 0 {
+				luser = 1
+			}
+			if Level == 2 && MmuTask != 0 {
+				luser = 1
+			}
+
+			/*
+				PrettyDumpHex64(0, 0xFFFF)
+			*/
+
+			L("RETURN ERROR: $%x(%v): OS9KERNEL%d %s #%d", errcode, DecodeOs9Error(errcode), luser, describe, Cycles)
+			L("\tregs: %s  #%d", Regs(), Cycles)
+			L("\t%s", ExplainMMU())
+		} else {
+			switch back1 {
+			case 0x82, 0x83, 0x84: // I$Dup, I$Create, I$Open
+				describe += F(" -> path $%x", GetAReg())
+			case 0x28: // F$SRqMem
+				describe += F(" -> size $%x addr $%04x", dreg, ureg)
+			case 0x30:
+				describe += F(" -> base $%x blocknum $%x addr $%x", xreg, GetAReg(), yreg)
+			case 0x00:
+				describe += F(" -> addr $%x entry $%x", ureg, yreg)
+			}
+
+			luser := 0
+			if Level == 1 && dpreg != 0 {
+				luser = 1
+			}
+			if Level == 2 && MmuTask != 0 {
+				luser = 1
+			}
+
+			L("RETURN OKAY: OS9KERNEL%d %s #%d", luser, describe, Cycles)
+			L("\tregs: %s  #%d", Regs(), Cycles)
+			L("\t%s", ExplainMMU())
+
+			if back1 == 0x8B {
+				var buf bytes.Buffer
+				for i := Word(0); i < yreg; i++ {
+					buf.WriteRune(rune(PeekB(xreg + i)))
+				}
+				L("ReadLn returns: [$%x] %q", buf.Len(), buf.String())
+			}
+		}
+
+		// Os9Description[stack] = "" // Clear description
+		delete(Os9Description, stack)
+
+	}
+}
+
+func Os9HypervisorCall(syscall byte) bool {
+	handled := false
+	L("Hyp::%x", syscall)
+	switch Word(syscall) {
+	case sym.I_Attach:
+		{
+			access_mode := GetAReg()
+			dev_name := Os9String(xreg)
+			L("Hyp I_Attach %q mode %d", dev_name, access_mode)
+		}
+	case sym.I_ChgDir:
+	case sym.I_Close:
+	case sym.I_Create:
+	case sym.I_Delete:
+	case sym.I_DeletX:
+	case sym.I_Detach:
+		{
+			dev_table := ureg
+			L("Hyp I_Detach %04x", dev_table)
+		}
+	case sym.I_Dup:
+		L("Hyp I_Dup %d.", GetAReg())
+	case sym.I_GetStt:
+	case sym.I_MakDir:
+	case sym.I_Open:
+	case sym.I_Read:
+	case sym.I_ReadLn:
+	case sym.I_Seek:
+	case sym.I_SetStt:
+	case sym.I_Write:
+	case sym.I_WritLn:
+	}
+	if handled {
+		sreg += 10
+		PullWord(&pcreg)
+		pcreg++
+	}
+	return handled
+}
+
+func Swi2ForOs9() {
+	describe, returns := DecodeOs9Opcode(B(pcreg))
+	proc := W0(sym.D_Proc)
+	pid := B0(proc + sym.P_ID)
+
+	luser := 0
+	if Level == 1 && dpreg != 0 {
+		luser = 1
+	}
+	if Level == 2 && MmuTask != 0 {
+		luser = 1
+	}
+	moduleName := ""
+	if luser == 1 {
+		pmodul := W0(proc + sym.P_PModul)
+		moduleName = Os9String(pmodul + W(pmodul+4))
+	}
+
+	if moduleName != "" {
+		L("{proc=%x%q} OS9KERNEL%d: %s", pid, moduleName, luser, describe)
+	} else {
+		L("{proc=%x} OS9KERNEL%d: %s", pid, luser, describe)
+	}
+
+	L("\tregs: %s", Regs())
+	L("\t%s", ExplainMMU())
+
+	stack := MapAddr(sreg, true /*quiet*/)
+	if returns {
+		Os9Description[stack] = describe
+	} else {
+		Os9Description[stack] = ""
+	}
+
+	if *FlagTraceOnOS9 != "" && describe != "" {
+		if RegexpTraceOnOS9 == nil {
+			RegexpTraceOnOS9 = regexp.MustCompile(*FlagTraceOnOS9)
+		}
+		if RegexpTraceOnOS9.MatchString(describe) {
+			*FlagTraceAfter = 1
+		}
+	}
 }

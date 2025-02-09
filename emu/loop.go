@@ -2,17 +2,17 @@ package emu
 
 import (
 	. "github.com/strickyak/gomar/gu"
-	"github.com/strickyak/gomar/sym"
+	// "github.com/strickyak/gomar/sym"
 
 	//"bufio"
-	"bytes"
+	// "bytes"
 	"flag"
 	//"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
-	"regexp"
+	// "regexp"
 	"sync/atomic"
 	"syscall"
 	//"sort"
@@ -468,47 +468,7 @@ func swi() {
 		}
 		return
 	case 1: /* SWI2 */
-		describe, returns := DecodeOs9Opcode(B(pcreg))
-		proc := W0(sym.D_Proc)
-		pid := B0(proc + sym.P_ID)
-
-		luser := 0
-		if Level == 1 && dpreg != 0 {
-			luser = 1
-		}
-		if Level == 2 && MmuTask != 0 {
-			luser = 1
-		}
-		moduleName := ""
-		if luser == 1 {
-			pmodul := W0(proc + sym.P_PModul)
-			moduleName = Os9String(pmodul + W(pmodul+4))
-		}
-
-		if moduleName != "" {
-			L("{proc=%x%q} OS9KERNEL%d: %s", pid, moduleName, luser, describe)
-		} else {
-			L("{proc=%x} OS9KERNEL%d: %s", pid, luser, describe)
-		}
-
-		L("\tregs: %s", Regs())
-		L("\t%s", ExplainMMU())
-
-		stack := MapAddr(sreg, true /*quiet*/)
-		if returns {
-			Os9Description[stack] = describe
-		} else {
-			Os9Description[stack] = ""
-		}
-
-		if *FlagTraceOnOS9 != "" && describe != "" {
-			if RegexpTraceOnOS9 == nil {
-				RegexpTraceOnOS9 = regexp.MustCompile(*FlagTraceOnOS9)
-			}
-			if RegexpTraceOnOS9.MatchString(describe) {
-				*FlagTraceAfter = 1
-			}
-		}
+		Swi2ForOs9()
 
 		handler = W(0xfff4)
 	case 2: /* SWI3 */
@@ -539,22 +499,7 @@ func swi() {
 }
 
 func rti() {
-	//if Cycles >= *FlagTraceAfter {
-	DoDumpProcsAndPathsPrime()
-	DoDumpSysMap()
-	//}
-
-	stack := MapAddr(sreg, true /*quiet*/)
-	describe := Os9Description[stack]
-
-	if *FlagTraceOnOS9 != "" && describe != "" {
-		if RegexpTraceOnOS9 == nil {
-			RegexpTraceOnOS9 = regexp.MustCompile(*FlagTraceOnOS9)
-		}
-		if RegexpTraceOnOS9.MatchString(describe) {
-			*FlagTraceAfter = 1
-		}
-	}
+	PreRTI()
 
 	entire := ccreg & CC_ENTIRE
 	if entire == 0 {
@@ -573,65 +518,8 @@ func rti() {
 	}
 	PullWord(&pcreg)
 
-	back3 := B(pcreg - 3)
-	back2 := B(pcreg - 2)
-	back1 := B(pcreg - 1)
-	if back3 == 0x10 && back2 == 0x3f && describe != "" {
-		if (ccreg & 1 /* carry bit indicates error */) != 0 {
-			errcode := GetBReg()
+	PostRTI()
 
-			luser := 0
-			if Level == 1 && dpreg != 0 {
-				luser = 1
-			}
-			if Level == 2 && MmuTask != 0 {
-				luser = 1
-			}
-
-			/*
-				PrettyDumpHex64(0, 0xFFFF)
-			*/
-
-			L("RETURN ERROR: $%x(%v): OS9KERNEL%d %s #%d", errcode, DecodeOs9Error(errcode), luser, describe, Cycles)
-			L("\tregs: %s  #%d", Regs(), Cycles)
-			L("\t%s", ExplainMMU())
-		} else {
-			switch back1 {
-			case 0x82, 0x83, 0x84: // I$Dup, I$Create, I$Open
-				describe += F(" -> path $%x", GetAReg())
-			case 0x28: // F$SRqMem
-				describe += F(" -> size $%x addr $%04x", dreg, ureg)
-			case 0x30:
-				describe += F(" -> base $%x blocknum $%x addr $%x", xreg, GetAReg(), yreg)
-			case 0x00:
-				describe += F(" -> addr $%x entry $%x", ureg, yreg)
-			}
-
-			luser := 0
-			if Level == 1 && dpreg != 0 {
-				luser = 1
-			}
-			if Level == 2 && MmuTask != 0 {
-				luser = 1
-			}
-
-			L("RETURN OKAY: OS9KERNEL%d %s #%d", luser, describe, Cycles)
-			L("\tregs: %s  #%d", Regs(), Cycles)
-			L("\t%s", ExplainMMU())
-
-			if back1 == 0x8B {
-				var buf bytes.Buffer
-				for i := Word(0); i < yreg; i++ {
-					buf.WriteRune(rune(PeekB(xreg + i)))
-				}
-				L("ReadLn returns: [$%x] %q", buf.Len(), buf.String())
-			}
-		}
-
-		// Os9Description[stack] = "" // Clear description
-		delete(Os9Description, stack)
-
-	}
 	if V['M'] {
 		DoDumpAllMemory() // yak
 	}

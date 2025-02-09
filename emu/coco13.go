@@ -719,44 +719,6 @@ func JustDoDumpAllMemory() {
 	Logd("#DumpAllMemory)\n")
 }
 
-func ScanRamForOs9Modules() []*ModuleFound {
-	var z []*ModuleFound
-	for i := 256; i < len(mem)-256; i++ {
-		if mem[i] == 0x87 && mem[i+1] == 0xCD {
-
-			parity := byte(255)
-			// var buf bytes.Buffer
-			for j := 0; j < 9; j++ {
-				parity ^= mem[i+j]
-				// fmt.Fprintf(&buf, " %02x", mem[i+j])
-			}
-			// log.Printf("  for parity: %s", buf.String())
-
-			if parity == 0 {
-				sz := int(HiLo(mem[i+2], mem[i+3]))
-				nameAddr := i + int(HiLo(mem[i+4], mem[i+5]))
-				got := uint32(HiMidLo(mem[i+sz-3], mem[i+sz-2], mem[i+sz-1]))
-				crc := 0xFFFFFF ^ Os9CRC(mem[i:i+sz])
-				if got == crc {
-					log.Printf("SCAN (at $%x to $%x sz $%x) %q %06x %06x", i, i+sz, sz, Os9StringPhys(nameAddr), mem[i+sz-3:i+sz], 0xFFFFFF^Os9CRC(mem[i:i+sz]))
-					z = append(z, &ModuleFound{
-						Addr: uint32(i),
-						Len:  uint32(sz),
-						CRC:  crc,
-						Name: Os9StringPhys(nameAddr),
-					})
-				} else {
-					log.Printf("SCAN BAD CRC (@%04x) %06x %06x", i, got, crc)
-
-				}
-			} else {
-				log.Printf("SCAN BAD PARITY (@%04x) %02x", i, parity)
-			}
-		}
-	}
-	return z
-}
-
 func Os9CRC(a []byte) uint32 {
 	var crc uint32 = 0xFFFFFF
 	for k := 0; k < len(a)-3; k++ {

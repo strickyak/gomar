@@ -557,8 +557,8 @@ func DoDumpDevices_Inner() {
 
 func DecodeOs9Level2Opcode(b byte) (s string, p string, returns bool) {
 	returns = true
-    switch b {
-		// Level 2:
+	switch b {
+	// Level 2:
 	case 0x34:
 		s = "F$SLink  : System Link"
 		mapping := GetMappingTask0(yreg)
@@ -616,10 +616,10 @@ func DecodeOs9Level2Opcode(b byte) (s string, p string, returns bool) {
 		s = "F$DelRam : Deallocate RAM blocks"
 		p = F("numBlocks=%x firstBlock=%x", GetBReg(), xreg)
 
-    default:
-        // The opcodes that are sent from os9 Decode... to here
-        // are explicitly named, and should match up.
-        log.Panicf("DecodeOs9Level2Opcode: Unknown op $%02x", b)
-    }
-    return
+	default:
+		// The opcodes that are sent from os9 Decode... to here
+		// are explicitly named, and should match up.
+		log.Panicf("DecodeOs9Level2Opcode: Unknown op $%02x", b)
+	}
+	return
 }
