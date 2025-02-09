@@ -499,7 +499,7 @@ func swi() {
 }
 
 func rti() {
-	PreRTI()
+	stack, describe := PreRTI()
 
 	entire := ccreg & CC_ENTIRE
 	if entire == 0 {
@@ -518,7 +518,7 @@ func rti() {
 	}
 	PullWord(&pcreg)
 
-	PostRTI()
+	PostRTI(stack, describe)
 
 	if V['M'] {
 		DoDumpAllMemory() // yak

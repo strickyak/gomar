@@ -44,5 +44,5 @@ func DecodeOs9Level2Opcode(b byte) (s string, p string, returns bool) {
 func Swi2ForOs9()                         {}
 func Os9HypervisorCall(syscall byte) bool { return false }
 
-func PreRTI()  {}
-func PostRTI() {}
+func PreRTI() (stack int, describe string) { return }
+func PostRTI(stack int, describe string)   {}

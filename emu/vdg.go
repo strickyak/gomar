@@ -160,4 +160,5 @@ func (o *VDG) changeBit(addr uint) {
 	case 0x1F:
 		o.Ty |= 1
 	}
+	enableRom = (o.Ty & 1) == 0
 }

@@ -85,7 +85,7 @@ func B(addr Word) byte {
 
 func PokeB(addr Word, b byte) {
 	if enableRom && 0x8000 <= addr && addr < 0xFF00 {
-		L("ROM MODE inhibits write")
+		L("PokeB: ROM MODE inhibits write (%04x <- %02x", addr, b)
 	} else {
 		mem[addr] = b
 	}
@@ -119,7 +119,7 @@ func PutB(addr Word, x byte) {
 
 	old := mem[addr]
 	if enableRom && 0x8000 <= addr && addr < 0xFF00 {
-		L("ROM MODE inhibits write")
+		L("PutB: ROM MODE inhibits write (%04x <- %02x", addr, x)
 	} else {
 		mem[addr] = x
 

@@ -9,8 +9,9 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"os"
-	"strings"
+	//"os"
+	//"strings"
+	"regexp"
 )
 
 var _ = Log
@@ -1029,14 +1030,14 @@ func ScanRamForOs9Modules() []*ModuleFound {
 	return z
 }
 
-func PreRTI() {
+func PreRTI() (stack int, describe string) {
 	//if Cycles >= *FlagTraceAfter {
 	DoDumpProcsAndPathsPrime()
 	DoDumpSysMap()
 	//}
 
-	stack := MapAddr(sreg, true /*quiet*/)
-	describe := Os9Description[stack]
+	stack = MapAddr(sreg, true /*quiet*/)
+	describe = Os9Description[stack]
 
 	if *FlagTraceOnOS9 != "" && describe != "" {
 		if RegexpTraceOnOS9 == nil {
@@ -1046,9 +1047,10 @@ func PreRTI() {
 			*FlagTraceAfter = 1
 		}
 	}
+	return stack, describe
 }
 
-func PostRTI() {
+func PostRTI(stack int, describe string) {
 	back3 := B(pcreg - 3)
 	back2 := B(pcreg - 2)
 	back1 := B(pcreg - 1)
@@ -1106,7 +1108,6 @@ func PostRTI() {
 
 		// Os9Description[stack] = "" // Clear description
 		delete(Os9Description, stack)
-
 	}
 }
 

@@ -15,7 +15,8 @@ import (
 // figure 3-5
 
 var usedRom bool
-var romMode byte
+
+// ?//var romMode byte
 var enableRom bool
 var enableTramp bool
 var internalRom [0x8000]byte // up to 32K
@@ -605,9 +606,11 @@ func PutIOByte(a Word, b byte) {
 
 	case 0xFFDE:
 		sam.TyAllRam = false
+		enableRom = true
 		Logd("VDG TyAllRam <- FALSE")
 	case 0xFFDF:
 		sam.TyAllRam = true
+		enableRom = false
 		Logd("VDG TyAllRam <- TRUE")
 
 	case 0xFF80,
