@@ -29,11 +29,11 @@ func main() {
 	for i := 0; i < 10; i++ {
 		for j := 0; j < 10; j++ {
 			if (i & 3) == 0 {
-				z = append(z, []byte{128, 128, 128}...)
-			} else if (i & 3) == 0 {
+				z = append(z, []byte{128, 128, 0}...)
+			} else if (j & 3) == 0 {
 				z = append(z, []byte{0, 128, 128}...)
 			} else if i == j {
-				z = append(z, []byte{0, 200, 0}...)
+				z = append(z, []byte{30, 250, 30}...)
 			} else {
 				z = append(z, []byte{50, 50, 50}...)
 			}
