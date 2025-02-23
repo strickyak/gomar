@@ -3,11 +3,15 @@
 package emu
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	. "github.com/strickyak/gomar/gu"
 	"github.com/strickyak/gomar/listings"
 	"log"
+	"os"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -44,6 +48,83 @@ var sam Sam
 var InitialModules []*ModuleFound
 var InternalRomSrc *listings.ModSrc
 var ExternalRomSrc *listings.ModSrc
+var GlobalSrc *listings.ModSrc
+
+/*
+Section: .bss (_nekot.o) load at 0008, length 0046
+Section: .data.more (_nekot.o) load at 1002, length 0049
+Section: .text (_nekot.o) load at 104B, length 0857
+Section: .final.kern (_nekot.o) load at 18A2, length 0002
+Section: .data.startup (_nekot.o) load at 18A4, length 0018
+Section: .text.startup (_nekot.o) load at 18BC, length 0135
+Section: .final.startup (_nekot.o) load at 19F1, length 0002
+*/
+
+type Section struct {
+	name  string
+	begin uint
+	size  uint
+}
+
+var MatchSection = regexp.MustCompile(`^Section: (\S+) [(].*[)] load at (....), length (....)$`)
+
+func LoadMapAndList(mapfile, listfile string) *listings.ModSrc {
+	z := &listings.ModSrc{
+		Src: make(map[uint]string),
+	}
+
+	if mapfile == "" && listfile == "" {
+		return z
+	}
+	if mapfile == "" {
+		log.Fatalf("has listfile %q but missing mapfile", listfile)
+	}
+	if listfile == "" {
+		log.Fatalf("has mapfile %q but missing listfile", mapfile)
+	}
+
+	sections := make(map[string]Section)
+	for _, line := range ReadFileLines(mapfile) {
+		if m := MatchSection.FindStringSubmatch(line); m != nil {
+			name := m[1]
+			begin := uint(Value(strconv.ParseUint(m[2], 16, 16)))
+			size := uint(Value(strconv.ParseUint(m[3], 16, 16)))
+			sections[name] = Section{name, begin, size}
+			log.Printf("SECTION: %q %04x %04x", name, begin, size)
+		}
+	}
+
+	in := listings.LoadFile(listfile)
+	in = Value(in, in.Err)
+	newSrcMap := make(map[uint]string)
+	for addr, line := range in.Src {
+		if area, ok := in.Area[addr]; ok {
+			if section, ok := sections[area]; ok {
+				newSrcMap[addr+section.begin] = line
+			}
+		}
+	}
+
+	return &listings.ModSrc{
+		Src:      newSrcMap,
+		Filename: in.Filename,
+		Err:      in.Err,
+	}
+}
+
+func ReadFileLines(filename string) []string {
+	var z []string
+
+	fd := Value(os.Open(filename))
+	defer fd.Close()
+
+	scanner := bufio.NewScanner(fd)
+	for scanner.Scan() {
+		z = append(z, strings.TrimSuffix(scanner.Text(), "\n"))
+	}
+
+	return Value(z, scanner.Err())
+}
 
 type ModuleFound struct {
 	Addr     uint32
@@ -58,6 +139,7 @@ func (m ModuleFound) Id() string {
 }
 
 func LoadRomListings() {
+	GlobalSrc = LoadMapAndList(*FlagGlobalMap, *FlagGlobalListing)
 	if *FlagInternalRomListing != "" {
 		InternalRomSrc = listings.LoadFile(*FlagInternalRomListing)
 	}

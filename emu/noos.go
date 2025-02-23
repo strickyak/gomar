@@ -46,3 +46,7 @@ func Os9HypervisorCall(syscall byte) bool { return false }
 
 func PreRTI() (stack int, describe string) { return }
 func PostRTI(stack int, describe string)   {}
+
+func ScanRamForOs9Modules() []*ModuleFound {
+	return nil
+}

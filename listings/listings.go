@@ -16,6 +16,7 @@ var FlagTraceOnModule = flag.String("trace_on_module", "", "start tracing when l
 
 type ModSrc struct {
 	Src      map[uint]string
+	Area     map[uint]string
 	Filename string
 	Err      error
 }
@@ -51,11 +52,15 @@ func Lookup(module string, offset uint, startTrace func()) string {
 
 var parseLabel = regexp.MustCompile(`^([[:xdigit:]]{4})  +[(].*?[)]:[0-9]{5} +([A-Za-z0-9._$@]+[:]?) *$`)
 var parse = regexp.MustCompile(`^([[:xdigit:]]{4}) [[:xdigit:]]+ +[(].*?[)]:[0-9]{5}         (.*)$`)
+var parseArea = regexp.MustCompile(`^ +[(].*?[)]:[[:digit:]]{5} +(?i:.area) +(\S+)`)
 var parseSection = regexp.MustCompile(`^ +[(].*?[)]:[[:digit:]]{5} +(?i:section) +([[:word:]]+)`)
 var parseEndSection = regexp.MustCompile(`^ +[(].*?[)]:[[:digit:]]{5} +(?i:endsection)`)
 
 func LoadFile(filename string) *ModSrc {
+	area := ""
+
 	d := make(map[uint]string)
+	areaDict := make(map[uint]string)
 	// Try overriding filename with ".mod" instead of version suffix.
 	var fd *os.File
 	var err error
@@ -92,6 +97,9 @@ func LoadFile(filename string) *ModSrc {
 				line = sawLabel + line
 			}
 			d[uint(addr)] = line
+			if area != "" {
+				areaDict[uint(addr)] = area
+			}
 			//log.Printf("FILE %s ADDR %x LINE %q", filename, addr, line)
 			sawAddr = ""
 			sawLabel = ""
@@ -100,6 +108,12 @@ func LoadFile(filename string) *ModSrc {
 		if m != nil && !inOtherSection {
 			sawAddr = m[1]
 			sawLabel = m[2]
+		}
+		m = parseArea.FindStringSubmatch(text)
+		if m != nil {
+			area = m[1]
+			inOtherSection = !strings.HasPrefix(area, ".text")
+			log.Printf("AREA %q isOther %v", area, inOtherSection)
 		}
 		m = parseSection.FindStringSubmatch(text)
 		if m != nil {
@@ -114,6 +128,7 @@ func LoadFile(filename string) *ModSrc {
 	log.Printf("BORGES: Loaded Source: %q (%d)", filename, len(d))
 	return &ModSrc{
 		Src:      d,
+		Area:     areaDict,
 		Filename: filename,
 		Err:      nil,
 	}

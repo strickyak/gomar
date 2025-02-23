@@ -75,7 +75,9 @@ func Trace() {
 	}
 
 	text := ""
-	if !sam.TyAllRam && AddressInRomSpace(pcreg_prev) {
+	if m, ok := GlobalSrc.Src[uint(pcreg_prev)]; ok {
+		text = m
+	} else if !sam.TyAllRam && AddressInRomSpace(pcreg_prev) {
 		var src *listings.ModSrc
 		if UseExternalRomAssumingRom(pcreg_prev) {
 			src = ExternalRomSrc

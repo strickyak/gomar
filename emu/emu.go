@@ -26,6 +26,8 @@ var FlagLinkerMapFilename = flag.String("map", "", "")
 var FlagInternalRomDup = flag.String("internal_rom_dup", "C03F:C36C:4000", "begin, end, relocation (hex)")
 var FlagInternalRomListing = flag.String("internal_rom_listing", "", "filename of .list file")
 var FlagExternalRomListing = flag.String("external_rom_listing", "", "filename of .list file")
+var FlagGlobalListing = flag.String("global_listing", "", "filename of .list file")
+var FlagGlobalMap = flag.String("global_map", "", "filename of .map file")
 
 // var FlagBootImageFilename = flag.String("boot", "", "")
 var FlagLoadmFilename = flag.String("loadm", "", "")
@@ -277,6 +279,13 @@ var irqs_pending byte
 var instructionTable [256]func()
 
 //////////////////////////////////////////////////////////////
+
+func Regs() string {
+	var buf bytes.Buffer
+	Z(&buf, "a=%02x b=%02x x=%04x:%04x y=%04x:%04x u=%04x:%04x s=%04x:%04x,%04x cc=%s dp=%02x #%d",
+		GetAReg(), GetBReg(), xreg, PeekW(xreg), yreg, PeekW(yreg), ureg, PeekW(ureg), sreg, PeekW(sreg), PeekW(sreg+2), ccbits(ccreg), dpreg, Cycles)
+	return buf.String()
+}
 
 const NMI_PENDING = CC_ENTIRE /* borrow this bit */
 const IRQ_PENDING = CC_INHIBIT_IRQ

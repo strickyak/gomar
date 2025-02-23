@@ -47,7 +47,7 @@ func NewGime() Screen {
 }
 
 func (o *Gime) Tick(step int64) {
-	// fmt.Printf("=-=-=-=-=-=-=-=-=-= GIME TICK #%d\n", step)
+	// fmt.Printf("G=-=-=-=-=-=-=-=-=-= GIME TICK #%d\n", step)
 	if (o.Ports[0x90] & 0x80) != 0 {
 		o.VDG.Tick(step)
 		return
@@ -63,13 +63,13 @@ func (o *Gime) Tick(step int64) {
 	p := GetCocoDisplayParams()
 
 	if p.Graphics {
-		fmt.Printf("=-=-=-=-=-=-=-=-=-= #%d  GRAPHICS %v\n", step, p)
+		fmt.Printf("G=-=-=-=-=-=-=-=-=-= #%d  GRAPHICS %v\n", step, p)
 	} else {
 		nc := p.AlphaCharsPerRow
 		cShift := Cond(p.AlphaHasAttrs, 1, 0)
 
 		//NormalColorXterm()
-		fmt.Printf("=-=-=-=-=-=-=-=-=-= #%d  gime %02x %02x :: %v\n", step, o.Ports[0x90], o.Ports[0x91], p)
+		fmt.Printf("G=-=-=-=-=-=-=-=-=-= #%d  gime %02x %02x :: %v\n", step, o.Ports[0x90], o.Ports[0x91], p)
 		for r := 0; r < o.NumRows; r++ {
 			var bb bytes.Buffer
 			bb.WriteByte('|')
@@ -110,7 +110,7 @@ func (o *Gime) Tick(step int64) {
 			fmt.Printf("%s\n", bb.String())
 		}
 		//NormalColorXterm()
-		fmt.Printf("=-=-=-=-=-=-=-=-=-= #%d\n", step)
+		fmt.Printf("G=-=-=-=-=-=-=-=-=-= #%d\n", step)
 
 	}
 }

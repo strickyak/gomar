@@ -37,7 +37,7 @@ func NewVDG() *VDG {
 }
 
 func (o *VDG) Tick(step int64) {
-	//fmt.Printf("=-=-=-=-=-=-=-=-=-= VDG TICK #%d\n", step)
+	//fmt.Printf("V=-=-=-=-=-=-=-=-=-= VDG TICK #%d\n", step)
 	if !o.Dirty {
 		return
 	}
@@ -46,7 +46,7 @@ func (o *VDG) Tick(step int64) {
 	}
 	o.Dirty = false
 
-	fmt.Printf("=-=-=-=-=-=-=-=-=-= %d  (%d %d %d %d %d %d) \n", step, o.V, o.Addr, o.P, o.R, o.M, o.Ty)
+	fmt.Printf("V=-=-=-=-=-=-=-=-=-= %d (v:%d &%d p:%d r:%d m:%d ty:%d)\n", step, o.V, o.Addr, o.P, o.R, o.M, o.Ty)
 	for r := 0; r < o.NumRows; r++ {
 		var bb bytes.Buffer
 		bb.WriteByte('|')
@@ -69,7 +69,7 @@ func (o *VDG) Tick(step int64) {
 		}
 		fmt.Printf("%s\n", bb.String())
 	}
-	fmt.Printf("=-=-=-=-=-=-=-=-=-= %d\n", step)
+	fmt.Printf("V=-=-=-=-=-=-=-=-=-= %d\n", step)
 }
 
 func (o *VDG) Poke(addr uint, longAddr uint, x byte) {
