@@ -3,13 +3,17 @@
 package emu
 
 import (
+    "github.com/strickyak/gomar/kitty"
+
 	"bytes"
 	"flag"
 	"fmt"
+    "os"
 )
 
 var FlagShowVDGScreen = flag.Bool("show_vdg_screen", false, "show VDG screens on stdout")
 var FlagSemiGraphicsNotDirty = flag.Bool("semi-graphics-not-dirty", true, "don't let semigraphics (blinking cursor!) dirty it")
+var FlagMag = flag.Int("mag", 8, "graphics pixel magnification")
 
 type VDG struct {
 	Dirty   bool
@@ -36,24 +40,25 @@ func NewVDG() *VDG {
 	}
 }
 
-func (o *VDG) Tick(step int64) {
-	//fmt.Printf("V=-=-=-=-=-=-=-=-=-= VDG TICK #%d\n", step)
-	if !o.Dirty {
-		return
-	}
-	if !*FlagShowVDGScreen {
-		return
-	}
-	o.Dirty = false
-
-	fmt.Printf("V=-=-=-=-=-=-=-=-=-= %d (v:%d &%d p:%d r:%d m:%d ty:%d)\n", step, o.V, o.Addr, o.P, o.R, o.M, o.Ty)
+func (o *VDG) DrawText() {
 	for r := 0; r < o.NumRows; r++ {
 		var bb bytes.Buffer
 		bb.WriteByte('|')
 		for c := 0; c < o.NumCols; c++ {
 			x := PeekB(Word(o.Addr) + Word(c+r*o.NumCols))
 			if 128 <= x {
-				x = '~'
+                if (x & 0x0F) == 0x00 {
+                    // Use space if no spots are set
+				    x = ' '
+                } else if (x & 0x0F) == 0x0F {
+                    // // Use letters [A-H] if all 4 spots are set
+				    // x = 'A' + (0x0F & (x >> 4)) - 8
+                    // Use octothorpe if all 4 spots are set
+				    x = '#'
+                } else {
+                    // Use '+' if some but not all spots are set
+				    x = '+'
+                }
 			} else {
 				x = 63 & x
 				if x < 32 {
@@ -69,7 +74,61 @@ func (o *VDG) Tick(step int64) {
 		}
 		fmt.Printf("%s\n", bb.String())
 	}
-	fmt.Printf("V=-=-=-=-=-=-=-=-=-= %d\n", step)
+}
+func (o *VDG) DrawPMode1() {
+	const NUM_ROWS = 96
+	const NUM_COLS = 128
+	const PIXELS_PER_BYTE = 4
+	const BITS_PER_PIXEL = 8 / PIXELS_PER_BYTE
+
+    lookup := [4]struct {R, G, B byte} {
+        {50, 250, 50},
+        {50, 50, 50},
+        {250, 250, 50},
+        {50, 50, 250},
+    }
+
+    var payload []byte
+	for r := 0; r < NUM_ROWS; r++ {
+	    var bb []byte
+        for c := 0; c < NUM_COLS/PIXELS_PER_BYTE; c++ {
+            one_byte := PeekB(Word(o.Addr) + Word(c+r*NUM_COLS/PIXELS_PER_BYTE))
+            for pix := PIXELS_PER_BYTE-1; pix >=0; pix-- {
+                color := ((one_byte >> (pix * BITS_PER_PIXEL)) & (PIXELS_PER_BYTE-1))
+                red := lookup[color].R
+                green := lookup[color].G
+                blue := lookup[color].B
+                for mag := 0; mag < *FlagMag; mag++ {
+                    bb = append(bb, red, green, blue)
+                }
+            }
+        }
+		for mag := 0; mag < *FlagMag; mag++ {
+            payload = append(payload, bb...)
+		}
+	}
+    kitty.Draw(os.Stdout, uint(*FlagMag*NUM_COLS), uint(*FlagMag*NUM_ROWS), payload)
+}
+func (o *VDG) Tick(step int64) {
+	if !o.Dirty {
+		return
+	}
+	if !*FlagShowVDGScreen {
+		return
+	}
+	o.Dirty = false
+
+	fmt.Printf("V=-=-=-=-=-=-=-=-=-= #%d (v:%d &%d p:%d r:%d m:%d ty:%d)\n", step, o.V, o.Addr, o.P, o.R, o.M, o.Ty)
+	switch o.V {
+	case 0:
+		o.DrawText()
+	case 4:
+		o.DrawPMode1()
+	default:
+		fmt.Printf("[ video mode v=%d not handled yet ]\n", o.V)
+	}
+
+	fmt.Printf("V=-=-=-=-=-=-=-=-=-= #%d\n", step)
 }
 
 func (o *VDG) Poke(addr uint, longAddr uint, x byte) {
