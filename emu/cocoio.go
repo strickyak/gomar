@@ -228,7 +228,7 @@ func wizSendTCP(sock *socket) {
 	size := end - begin
 	size &= 0x7ff       // 2K ring buffers.
 	AssertGT(size, 2)   // reasonable for now
-	AssertLT(size, 700) // reasonable for now
+	AssertLT(size, 1500) // reasonable for now
 
 	buf := make([]byte, size)
 	for i := Word(0); i < size; i++ {
