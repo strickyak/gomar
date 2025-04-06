@@ -110,25 +110,26 @@ func (o *VDG) DrawPMode1() {
 	kitty.Draw(os.Stdout, uint(*FlagMag*NUM_COLS), uint(*FlagMag*NUM_ROWS), payload)
 }
 func (o *VDG) Tick(step int64) {
-	if !o.Dirty {
-		return
+	if false {
+        if !o.Dirty {
+            return
+        }
 	}
 	if !*FlagShowVDGScreen {
 		return
 	}
 	o.Dirty = false
 
-	fmt.Printf("V=-=-=-=-=-=-=-=-=-= #%d (v:%d &%d p:%d r:%d m:%d ty:%d)\n", step, o.V, o.Addr, o.P, o.R, o.M, o.Ty)
 	switch o.V {
 	case 0:
 		o.DrawText()
 	case 4:
 		o.DrawPMode1()
+	    fmt.Printf("\n")
 	default:
 		fmt.Printf("[ video mode v=%d not handled yet ]\n", o.V)
 	}
-
-	fmt.Printf("V=-=-=-=-=-=-=-=-=-= #%d\n", step)
+	fmt.Printf("V ^^^^^^^^^^^^^^^^^^^ #%d (v:%d &%d p:%d r:%d m:%d ty:%d)\n", step, o.V, o.Addr, o.P, o.R, o.M, o.Ty)
 }
 
 func (o *VDG) Poke(addr uint, longAddr uint, x byte) {

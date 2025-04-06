@@ -7,7 +7,7 @@ echo "
       make run-lemma LAN=10.23.23.23 FORCE=--force_page=98
 
   But first, if you are forcing page 98,
-      cd ~/coco-shelf/nekot-coco-microkernel/kernel
+      cd ~/coco-shelf/nekotos/kernel
       make
 " >&2
 
