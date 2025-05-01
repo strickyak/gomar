@@ -111,9 +111,9 @@ func (o *VDG) DrawPMode1() {
 }
 func (o *VDG) Tick(step int64) {
 	if false {
-        if !o.Dirty {
-            return
-        }
+		if !o.Dirty {
+			return
+		}
 	}
 	if !*FlagShowVDGScreen {
 		return
@@ -125,7 +125,7 @@ func (o *VDG) Tick(step int64) {
 		o.DrawText()
 	case 4:
 		o.DrawPMode1()
-	    fmt.Printf("\n")
+		fmt.Printf("\n")
 	default:
 		fmt.Printf("[ video mode v=%d not handled yet ]\n", o.V)
 	}

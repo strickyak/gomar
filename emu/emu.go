@@ -18,6 +18,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var FlagTerm = flag.String("term", "Term", "name of terminal device")
@@ -96,6 +97,14 @@ const (
 	// Assembly Language Programming for the CoCo3 (1987)(Laurence A Tepolt)(pdf) pdf-page 50
 	Coco3SlowTimer = NTSCHorizontalFreq // Hz, when Init1 Bit 5 clear.
 	Coco3FastTimer = NTSCCrystalFreq    // Hz, when Init1 Bit 5 set.
+)
+
+const (
+	C_UP    = 0204
+	C_DOWN  = 0205
+	C_LEFT  = 0206
+	C_RIGHT = 0207
+	C_HOME  = 0200 // Coco CLEAR
 )
 
 // TODO: are these used?
@@ -369,22 +378,57 @@ func MaybeGetChar() byte {
 	return 0
 }
 
+func inkeyQuickly(keystrokes <-chan byte) byte {
+	select {
+	case ch, ok := <-keystrokes:
+		if ok {
+			return ch
+		}
+	case <-time.After(100 * time.Millisecond):
+		return 0
+	}
+	return 0
+}
+
 func inkey(keystrokes <-chan byte) byte {
 	select {
 	case _ch, _ok := <-keystrokes:
 		if _ok {
+			z := _ch
 			if Level == 2 {
 				// In Level2, swap case.
 				if 'A' <= _ch && _ch <= 'Z' {
-					return _ch + 32
+					z = _ch + 32
 				} else if 'a' <= _ch && _ch <= 'z' {
-					return _ch - 32
+					z = _ch - 32
 				} else {
-					return _ch
+					z = _ch
 				}
-			} else {
-				return _ch
 			}
+
+			if z == 27 { // ESC
+				z2 := inkeyQuickly(keystrokes)
+				if z2 == '[' {
+					z3 := inkeyQuickly(keystrokes)
+					switch z3 {
+					case 'A':
+						return C_UP
+					case 'B':
+						return C_DOWN
+					case 'C':
+						return C_RIGHT
+					case 'D':
+						return C_LEFT
+					case 'H':
+						return C_HOME // CocoCLEAR
+					}
+				} else if z2 != 0 {
+					// TODO: BUG: Swallow the ESC
+					return z2
+				}
+			}
+			return z
+
 		} else {
 			log.Printf("EXIT: inkey gets end of channel")
 			Finish()
