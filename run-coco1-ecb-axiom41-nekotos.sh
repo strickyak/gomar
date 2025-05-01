@@ -24,4 +24,5 @@ go run --tags=coco1,nekotos,vdg,cocoio,$TRACE  gomar.go \
     --show_vdg_screen=1 --bracket_terminal \
     --global_map ../nekotos/build-for-16k-cocoio/_kernel.decb.map     \
     --global_listing ../nekotos/build-for-16k-cocoio/_kernel.o.list   \
+    --ttl=600s \
     "$@"

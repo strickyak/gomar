@@ -422,9 +422,17 @@ func inkey(keystrokes <-chan byte) byte {
 					case 'H':
 						return C_HOME // CocoCLEAR
 					}
+					// Not an understood Escape sequence -- drain pending keystrokes
+					for z2 != 0 {
+						z2 = inkeyQuickly(keystrokes)
+					}
+					return 0
 				} else if z2 != 0 {
-					// TODO: BUG: Swallow the ESC
-					return z2
+					// Not an understood Escape sequence -- drain pending keystrokes
+					for z2 != 0 {
+						z2 = inkeyQuickly(keystrokes)
+					}
+					return 0
 				}
 			}
 			return z
@@ -439,16 +447,6 @@ func inkey(keystrokes <-chan byte) byte {
 		return 0
 	}
 }
-
-/*
-func printableChar(ch byte) string {
-	if ' ' <= ch && ch <= '~' {
-		return string(rune(ch))
-	} else {
-		return F("{%d}", ch)
-	}
-}
-*/
 
 func PrettyH(ch byte) byte {
 	ch &= 0x7F
