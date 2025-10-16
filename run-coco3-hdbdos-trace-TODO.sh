@@ -1,0 +1,1 @@
+ go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=10000000 -external_rom_listing ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom.list   -v=amit  ## ?-v
