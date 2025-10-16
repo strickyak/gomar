@@ -1,0 +1,30 @@
+ 2139  go run --tags=coco3,level2,vdg,cocoio,gime,  gomar.go --help  
+ 2140  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 | tee /tmp/log 
+ 2141  ls -t
+ 2142  hhh
+ 2143  cat  run-rsb-coco3.sh
+ 2144  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 >_1 2>_2 
+ 2145  wc _?
+ 2146  m _1 
+ 2147  go run --tags=coco3,level2,vdg,cocoio,gime,  gomar.go --help  
+ 2148  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 >_1 2>_2  -v=amit
+ 2149  ll
+ 2150  m _1 
+ 2151  grep -e -v *.sh
+ 2152  m run-coco1-ecb-axiom41-level1-p31.sh 
+ 2153  go run --tags=coco3,level2,vdg,cocoio,gime,  gomar.go --help  
+ 2154  m _log 
+ 2155  ll _log
+ 2156  rm _log 
+ 2157  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 >_1 2>_2  -v=amit
+ 2158  m _log 
+ 2159  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 >_1 2>_2  -v=amit  -external_rom_listing ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom.list  
+ 2160  m _log 
+ 2161  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=10000000 >_1 2>_2  -v=amit  -external_rom_listing ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom.list  
+ 2162  cat _1 
+ 2163  m _log 
+ 2164  g PutIO _log | m 
+ 2165  vi _log 
+ 2166  g 'ff20 <-' _log | m 
+ 2167  ls
+ 2168  history 30 > H.hdbdos.1 

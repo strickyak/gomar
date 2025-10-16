@@ -1,0 +1,33 @@
+ 1210  r cescap ../../
+ 1310  mv usb-in-out.h  bios.h 
+ 1410  mkdir ncl 
+ 1510  cd ../../tfr9/
+ 1610  export PICOTOOL_FETCH_FROM_GIT_PATH=/home/strick/modoc/coco-shelf/picotool  
+ 1710  ll *6809*
+ 1749  eog ~/Pictures/Screenshots/'Screenshot from 2025-10-05 08-26-52.png'
+ 1750  mv ~/Pictures/Screenshots/'Screenshot from 2025-10-05 08-26-52.png' ~/Pictures/Screenshots/rp2350b-dev-board.pinout.png 
+ 1810  cd ~/modoc/coco-shelf/tfr9/tfr908
+ 1910  ]l
+ 1980  cd /media/strick/6f980e10-d0e6-43ab-a27f-7695bf46b366/
+ 2010  env | grep TERM
+ 2100  echo n*
+ 2101  m n0.asm 
+ 2102  m wizfi.asm 
+ 2103  m n0.asm 
+ 2104  g mgrnam *.asm | m 
+ 2105  ls
+ 2106  ls n*
+ 2107  m n_scdwv.dd
+ 2108  m n_scdwv.dd.list 
+ 2109  m scdwv.dr.list 
+ 2110  cd ..
+ 2140  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 | tee /tmp/log 
+ 2144  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 >_1 2>_2 
+ 2148  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 >_1 2>_2  -v=amit
+ 2157  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 >_1 2>_2  -v=amit
+ 2159  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=1000000 >_1 2>_2  -v=amit  -external_rom_listing ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom.list  
+ 2161  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=10000000 >_1 2>_2  -v=amit  -external_rom_listing ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom.list  
+ 2170  p go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1000000 -max=30000000 2>_2  -v=amit  -external_rom_listing ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom.list  
+ 2171  go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1000000 -max=30000000 2>_2  -v=amit  -external_rom_listing ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom.list  
+ 2172  go run --tags=coco3,level2,vdg,cocoio,gime,trace  gomar.go --cart ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom  -rom_8000 ../toolshed/cocoroms/coco3.rom -internal_rom_listing ../toolshed/cocoroms/coco3.rom.list --show_vdg_screen=1 --bracket_terminal -t=1 -max=10000000 2>_2  -v=amit  -external_rom_listing ~/modoc/coco-shelf/toolshed/hdbdos/hdbdw3cc3.rom.list  
+ 2178  h 10 > H.hdbdos.cc3.2 
