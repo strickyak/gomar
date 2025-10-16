@@ -13,7 +13,7 @@ func DoDumpSysMap() {
 }
 
 func MemoryModuleOf(addr Word) (string, Word) {
-	return "UNFOUND", addr
+	return "", addr
 }
 
 func ScanModDir() {
