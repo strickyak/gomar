@@ -372,20 +372,20 @@ func PutIOByte(a Word, b byte) {
 		PutCopico(a, b)
 
 	// http://tlindner.macmess.org/wp-content/uploads/2006/09/cocopias-R3.pdf
-	case 0xFF02:
-		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
-		kbd_probe = b
-		return
-
-	case 0xFF00:
+	case 0xFF00, 0xFF1C:
 		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
 
-	case 0xFF01:
+	case 0xFF01, 0xFF1D:
 		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
 		Pia0HorzSyncInterruptEnable = (b & 1) != 0
 		return
 
-	case 0xFF03:
+	case 0xFF02, 0xFF1E:
+		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
+		kbd_probe = b
+		return
+
+	case 0xFF03, 0xFF1F:
 		Logd("PIA0: Put IO byte $%04x <- $%02x\n", a, b)
 		Pia0FrameSyncInterruptEnable = (b & 1) != 0
 
