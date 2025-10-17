@@ -45,6 +45,9 @@ type Comparable interface {
 	Number | string
 }
 
+func True[N Number](n N) bool  { return n != 0 }
+func False[N Number](n N) bool { return n == 0 }
+
 func Assert(b bool, args ...any) {
 	if !b {
 		s := "Assert Fails"
