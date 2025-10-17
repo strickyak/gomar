@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/exec" // Command stty
+	"time"
 
 	. "github.com/strickyak/gomar/gu"
 )
@@ -105,8 +106,19 @@ const INKEY2 = `
 var flagN = flag.Bool("n", false, "Disable (third) reading keystrokes from stdin")
 var flagInkey = flag.String("inkey", "", "(second) Inject keystrokes")
 var flagInkeyFile = flag.String("inkey_file", "", "Filename from which to (first) inject keystrokes")
+var flagInkeySleep = flag.Duration("inkey_sleep", 100*time.Millisecond, "how long to sleep before each keystroke")
 
 func InputRoutine(keystrokes chan<- byte) {
+	keystrokes2 := make(chan byte, 1)
+	go InputRoutine2(keystrokes2)
+
+	for k := range keystrokes2 {
+		time.Sleep(*flagInkeySleep)
+		keystrokes <- k
+	}
+}
+
+func InputRoutine2(keystrokes chan<- byte) {
 	// Start with the --inkey flag.
 	s := *flagInkey
 	// But if the --inkey_file flag is set, insert that in front.
