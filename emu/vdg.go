@@ -72,7 +72,9 @@ func (o *VDG) DrawText() {
 			x := PeekB(Word(o.Addr) + Word(c+r*o.NumCols))
 			fmt.Fprintf(&bb, " %02x", x)
 		}
-		fmt.Printf("%s\n", bb.String())
+		s := bb.String()
+		fmt.Printf("%s\n", s)
+		CheckExpectation(s)
 	}
 }
 func (o *VDG) DrawPMode1() {
