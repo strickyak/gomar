@@ -21,6 +21,8 @@ func InitExpectations() {
 		fmt.Printf("\n===@=== SET Expectations: %q\n", *FlagExpect)
 		log.Printf("\n===@=== SET Expectations: %q\n", *FlagExpect)
 	}
+	log.Printf("EXPECTATIONS LEN: %d", len(Expectations))
+	log.Printf("EXPECTATIONS: %#v", Expectations)
 }
 
 func CheckExpectation(got string) {
