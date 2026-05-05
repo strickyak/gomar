@@ -2,11 +2,13 @@ package emu
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 )
 
+var RawHyperPrint = flag.Bool("raw_hyper_print", false, "dont quote hyper prints")
 var HyperPrinting = true
 
 func Nice(ch byte) byte {
@@ -103,11 +105,13 @@ func PrintHyper(var_ptr Word) {
 			case 'x':
 				bb.WriteString(fmt.Sprintf("$%04x", PeekW(var_ptr)))
 			case 'd':
-				bb.WriteString(fmt.Sprintf("%d.", PeekW(var_ptr)))
+				bb.WriteString(fmt.Sprintf("%d", PeekW(var_ptr)))
+			case 'u':
+				bb.WriteString(fmt.Sprintf("%d", PeekW(var_ptr)))
 			case 's', 'q':
 				bb.Write(MachinePointerToString(PeekW(var_ptr)))
 			default:
-				log.Panicf("Bad char after % in format string: '%c' in %q", kind, format)
+				log.Panicf("Bad char after %% in format string: '%c' in %q", kind, format)
 			}
 			var_ptr += 2
 		} else {
@@ -116,7 +120,11 @@ func PrintHyper(var_ptr Word) {
 		i++
 	}
 	str := bb.String()
-	fmt.Printf("HYPER: [#%d %q]\n", Cycles, str)
+	if *RawHyperPrint {
+		fmt.Printf("%s", str)
+	} else {
+		fmt.Printf("HYPER: [#%d %q]\n", Cycles, str)
+	}
 	log.Printf("HYPER: [#%d %q]", Cycles, str)
 }
 
@@ -164,7 +172,7 @@ func emit_Words(forOutput bool, args ...Word) {
 			case 's':
 				bb.Write(MachinePointerToString(args[0]))
 			default:
-				log.Panicf("Bad char after % in format string: '%c' in %q", kind, format)
+				log.Panicf("Bad char after %% in format string: '%c' in %q", kind, format)
 			}
 			args = args[1:]
 		} else {
@@ -243,7 +251,9 @@ func HyperOp(hop byte) {
 
 	case 107: // Exit
 		log.Printf("*** GOMAR Hyper Exit: %d", dreg)
-		fmt.Printf("\n*** GOMAR Hyper Exit: %d\n", dreg)
+		if !*RawHyperPrint {
+			fmt.Printf("\n*** GOMAR Hyper Exit: %d\n", dreg)
+		}
 		os.Exit(int(dreg))
 
 	case 108: // PrintH

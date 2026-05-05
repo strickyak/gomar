@@ -1,4 +1,4 @@
-//go:build copico
+//go:build bonobo
 
 package emu
 
@@ -10,24 +10,24 @@ import (
 	"net"
 )
 
-var FlagCopicoServer = flag.String("copico_server", "",
-	"Lemma server for Copico Connections")
+var FlagBonoboServer = flag.String("bonobo_server", "",
+	"Lemma server for Bonobo Connections")
 
-var Copico = struct {
+var Bonobo = struct {
 	conn   *net.TCPConn
 	rx, tx []byte
 	c      byte
 }{}
 
-func CopicoInit() {
-	if Copico.conn != nil {
+func InitBonobo() {
+	if Bonobo.conn != nil {
 		return
 	}
 
-	Assert(*FlagCopicoServer != "")
+	Assert(*FlagBonoboServer != "")
 
-	p := &Copico
-	raddy, err := net.ResolveTCPAddr("tcp", *FlagCopicoServer)
+	p := &Bonobo
+	raddy, err := net.ResolveTCPAddr("tcp", *FlagBonoboServer)
 	if err != nil {
 		log.Panicf("WIZ: cannot ResolveTCPAddr: %v", err)
 	}
@@ -35,16 +35,16 @@ func CopicoInit() {
 	if err != nil {
 		log.Panicf("WIZ: cannot ListenUDP: %v", err)
 	}
-	fmt.Printf("copico/init: DialTcp: success: %q\n", *FlagCopicoServer)
-	log.Printf("copico/init: DialTcp: success: %q", *FlagCopicoServer)
+	fmt.Printf("bonobo/init: DialTcp: success: %q\n", *FlagBonoboServer)
+	log.Printf("bonobo/init: DialTcp: success: %q", *FlagBonoboServer)
 	p.conn = tconn
 }
 
-func GetCopico(a Word) (z byte) {
-	fmt.Printf("GetCopico(%04x) ...\n", a)
-	log.Printf("GetCopico(%04x) ...", a)
-	CopicoInit()
-	p := &Copico
+func GetBonobo(a Word) (z byte) {
+	fmt.Printf("GetBonobo(%04x) ...\n", a)
+	log.Printf("GetBonobo(%04x) ...", a)
+	BonoboInit()
+	p := &Bonobo
 	Assert(p.conn != nil)
 	switch a {
 	case 0xFF78:
@@ -70,16 +70,16 @@ func GetCopico(a Word) (z byte) {
 		panic(a)
 	}
 
-	fmt.Printf("GetCopico(%04x -> $%02x) [ c=%d rx=%d tx=%d ]\n", a, z, p.c, len(p.rx), len(p.tx))
-	log.Printf("GetCopico(%04x -> $%02x) [ c=%d rx=%d tx=%d ]", a, z, p.c, len(p.rx), len(p.tx))
+	fmt.Printf("GetBonobo(%04x -> $%02x) [ c=%d rx=%d tx=%d ]\n", a, z, p.c, len(p.rx), len(p.tx))
+	log.Printf("GetBonobo(%04x -> $%02x) [ c=%d rx=%d tx=%d ]", a, z, p.c, len(p.rx), len(p.tx))
 	return
 }
 
-func PutCopico(a Word, b byte) {
-	fmt.Printf("PutCopico(%04x <- $%02x) ...\n", a, b)
-	log.Printf("PutCopico(%04x <- $%02x) ...", a, b)
-	CopicoInit()
-	p := &Copico
+func PutBonobo(a Word, b byte) {
+	fmt.Printf("PutBonobo(%04x <- $%02x) ...\n", a, b)
+	log.Printf("PutBonobo(%04x <- $%02x) ...", a, b)
+	BonoboInit()
+	p := &Bonobo
 	Assert(p.conn != nil)
 	switch a {
 	case 0xFF78:
@@ -96,7 +96,7 @@ func PutCopico(a Word, b byte) {
 			AssertEQ(cc, len(p.tx))
 
 		} else {
-			log.Panicf("PutCopico: bad cmd: %d.", b)
+			log.Panicf("PutBonobo: bad cmd: %d.", b)
 		}
 	case 0xFF79:
 		panic(a)
@@ -120,6 +120,6 @@ func PutCopico(a Word, b byte) {
 	default:
 		panic(a)
 	}
-	fmt.Printf("PutCopico(%04x <- $%02x) [ c=%d rx=%d tx=%d ]\n", a, b, p.c, len(p.rx), len(p.tx))
-	log.Printf("PutCopico(%04x <- $%02x) [ c=%d rx=%d tx=%d ]", a, b, p.c, len(p.rx), len(p.tx))
+	fmt.Printf("PutBonobo(%04x <- $%02x) [ c=%d rx=%d tx=%d ]\n", a, b, p.c, len(p.rx), len(p.tx))
+	log.Printf("PutBonobo(%04x <- $%02x) [ c=%d rx=%d tx=%d ]", a, b, p.c, len(p.rx), len(p.tx))
 }

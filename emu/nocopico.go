@@ -1,11 +1,13 @@
-//go:build !copico
+//go:build !bonobo
 
 package emu
 
-func GetCopico(a Word) (z byte) {
-	panic("copico disabled (add --tag=copico)")
+func InitBonobo() {}
+
+func GetBonobo(a Word) (z byte) {
+	panic("bonobo disabled (add --tag=bonobo)")
 }
 
-func PutCopico(a Word, b byte) {
-	panic("copico disabled (add --tag=copico)")
+func PutBonobo(a Word, b byte) {
+	panic("bonobo disabled (add --tag=bonobo)")
 }

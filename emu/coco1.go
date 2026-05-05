@@ -1,5 +1,4 @@
-//go:build coco1
-// +build coco1
+//go:build coco1 || coco2
 
 package emu
 
@@ -20,6 +19,7 @@ const TraceMem = false // TODO: restore this some day.
 func EmitHardware() {}
 func InitHardware() {
 	display = NewVDG()
+	InitHardware13()
 }
 
 func ExplainMMU() string             { return "" }

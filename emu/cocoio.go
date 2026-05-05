@@ -574,3 +574,5 @@ func wizLog(format string, args ...any) {
 		log.Printf("w| "+format, args...)
 	}
 }
+
+func InitCocoIO() {}

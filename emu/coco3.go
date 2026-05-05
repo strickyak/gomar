@@ -1,5 +1,4 @@
 //go:build coco3
-// +build coco3
 
 package emu
 
@@ -79,6 +78,8 @@ func InitHardware() {
 		Coco3ContractForDos()
 	}
 	PutB(0xFF90, 0x80) // Start in VDG mode
+
+	InitHardware13()
 }
 func InitializeMemoryMap() {
 	for task := 0; task < 2; task++ {

@@ -9,4 +9,4 @@
 ) > /tmp/coco2rom.list
 
 
-- gorun --tags=coco1,level1,trace,d,vdg gomar.go -t=1 -rom_8000 /tmp/coco2rom -internal_rom_listing  /tmp/coco2rom.list   --cart ../toolshed/cocoroms/disk11.rom -external_rom_listing ../toolshed/cocoroms/disk11.rom.list
+- go run --tags=coco1,level1,trace,d,vdg gomar.go -t=1 -rom_8000 /tmp/coco2rom -internal_rom_listing  /tmp/coco2rom.list   --cart ../toolshed/cocoroms/disk11.rom -external_rom_listing ../toolshed/cocoroms/disk11.rom.list

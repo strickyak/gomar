@@ -253,12 +253,15 @@ func Loadm(loadm []byte) Word {
 		case 0x00:
 			n := HiLo(loadm[i+1], loadm[i+2])
 			p := HiLo(loadm[i+3], loadm[i+4])
+			log.Printf("Loadm: Loading $%x bytes at $%x", n, p)
 			for j := Word(0); j < n; j++ {
 				PokeB(p+j, loadm[i+5+j])
 			}
 			i += 5 + n
 		case 0xFF:
-			return HiLo(loadm[i+3], loadm[i+4])
+			p := HiLo(loadm[i+3], loadm[i+4])
+			log.Printf("Loadm: Entry is $%x", p)
+			return p
 		default:
 			log.Panicf("bad clause in loadm: [%x]: %02x", i, loadm[i])
 		}

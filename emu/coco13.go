@@ -1,4 +1,4 @@
-//go:build coco1 || coco3
+//go:build coco1 || coco2 || coco3
 
 package emu
 
@@ -59,6 +59,11 @@ Section: .data.startup (_nekot.o) load at 18A4, length 0018
 Section: .text.startup (_nekot.o) load at 18BC, length 0135
 Section: .final.startup (_nekot.o) load at 19F1, length 0002
 */
+
+func InitHardware13() {
+	InitBonobo()
+	InitCocoIO()
+}
 
 type Section struct {
 	name  string
@@ -221,7 +226,7 @@ func GetIOByteI(a Word) byte {
 		0xFF79,
 		0xFF7a,
 		0xFF7b:
-		return GetCopico(a)
+		return GetBonobo(a)
 
 	/* PIA 0 */
 	case 0xFF00:
@@ -369,7 +374,7 @@ func PutIOByte(a Word, b byte) {
 		0xFF79,
 		0xFF7a,
 		0xFF7b:
-		PutCopico(a, b)
+		PutBonobo(a, b)
 
 	// http://tlindner.macmess.org/wp-content/uploads/2006/09/cocopias-R3.pdf
 	case 0xFF00, 0xFF1C:
@@ -412,6 +417,9 @@ func PutIOByte(a Word, b byte) {
 				break
 			}
 
+		}
+	case 0xFF48:
+		{
 			log.Printf("...... Disk Command ($%x) Fnord", disk_command)
 			switch disk_command {
 			default:
@@ -477,33 +485,36 @@ func PutIOByte(a Word, b byte) {
 			}
 			disk_command = 0
 		}
-	case 0xFF48:
-		{ // CMDREG //
-			disk_command = b
-			switch b {
-			case 0x10:
-				{
-					disk_track = disk_data
-					disk_status = 0
-					Logd("Seek : %d\n", disk_data)
-				}
-			case 0x80:
-				{ // Read Sector //
-					// We have set disk_command.  Next control write defines disk & side. //
+		/*
+			case 0xFF48:
+				{ // CMDREG //
+					disk_command = b
+					switch b {
+					case 0x10:
+						{
+							disk_track = disk_data
+							disk_status = 0
+							Logd("Seek : %d\n", disk_data)
+						}
+					case 0x80:
+						{ // Read Sector //
+							// We have set disk_command.  Next control write defines disk & side. //
 
+						}
+					case 0xD0:
+						{
+							disk_drive = 0
+							disk_side = 0
+							disk_track = 0
+							disk_sector = 0
+							disk_i = 0
+							disk_stuff = zero_disk_stuff
+							Logd("Reset Disk\n")
+						}
+					}
 				}
-			case 0xD0:
-				{
-					disk_drive = 0
-					disk_side = 0
-					disk_track = 0
-					disk_sector = 0
-					disk_i = 0
-					disk_stuff = zero_disk_stuff
-					Logd("Reset Disk\n")
-				}
-			}
-		}
+		*/
+
 	case 0xFF49: /* TRACK */
 		disk_track = b
 		Logd("Track : %d\n", b)
