@@ -289,6 +289,8 @@ func Main() {
 			ParanoidAsserts()
 		}
 
+        // log.Printf("PEEK 0x406A : %02x %02x", PeekB(0x406A), PeekB(0x406B))
+
 	} /* next step */
 
 	if Expectations != nil {

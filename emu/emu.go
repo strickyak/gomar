@@ -178,8 +178,11 @@ func CoreDump(filename string) {
 	}
 	w := bufio.NewWriter(fd)
 	for i := 0; i < 0x10000; i++ {
-		w.WriteByte(B(Word(i)))
-		// w.WriteByte(EA(i).GetB())
+        if i < 0xFF00 {
+		    w.WriteByte(B(Word(i)))
+        } else {
+		    w.WriteByte(0)
+        }
 	}
 	for i := DRegEA; i <= PCRegEA; i++ {
 		word := EA(i).GetW()
