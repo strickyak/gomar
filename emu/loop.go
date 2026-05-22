@@ -111,6 +111,16 @@ func Main() {
 	}
 	Logd("(end roms)")
 
+	if *FlagBigRomFilename != "" {
+		rom, err := ioutil.ReadFile(*FlagBigRomFilename)
+		if err != nil {
+			log.Fatalf("Cannot read rom image: %q: %v", *FlagBigRomFilename, err)
+		}
+		Logd("Loading BigRom Cart %q", *FlagBigRomFilename)
+		LoadBigRom(rom)
+	}
+	Logd("(end roms)")
+
 	if *FlagLoadmFilename != "" {
 		loadm, err := ioutil.ReadFile(*FlagLoadmFilename)
 		if err != nil {
@@ -289,7 +299,7 @@ func Main() {
 			ParanoidAsserts()
 		}
 
-        // log.Printf("PEEK 0x406A : %02x %02x", PeekB(0x406A), PeekB(0x406B))
+		// log.Printf("PEEK 0x406A : %02x %02x", PeekB(0x406A), PeekB(0x406B))
 
 	} /* next step */
 

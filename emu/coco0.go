@@ -1,9 +1,9 @@
-//go:build coco1 || coco2
+//go:build coco0
 
 package emu
 
 import (
-	. "github.com/strickyak/gomar/gu"
+	// . "github.com/strickyak/gomar/gu"
 
 	"flag"
 	"log"
@@ -26,30 +26,17 @@ func InitHardware() {
 func ExplainMMU() string             { return "" }
 func DoExplainMmuBlock(i int) string { return "" }
 
-func UseExternalRomAssumingRom(addr Word) bool {
-	return 0xC000 <= addr && addr < 0xFFF0
+func UseRom(addr Word) bool {
+	return 0x8000 <= addr && addr < 0xFF00
 }
-func InternalRomOffset(addr Word) uint {
-	// In coco1 & coco2, there is only 16K internal,
-	// in the lower half of 32K.
-	return 0x3FFF & uint(addr)
-}
-func ExternalRomOffset(addr Word) uint {
-	// In coco1 & coco2, there is only 16K external,
-	// but it is in the upper half of 32K.
-	return 0x4000 + 0x3FFF&uint(addr)
+func RomOffset(addr Word) uint {
+	return 0x7FFF & uint(addr)
 }
 func RamOffset(addr Word) uint {
-	return SimpleRamOffset(addr)
+	return uint(addr)
 }
-
-// Coco1,2 can swap ram pages
-func SimpleRamOffset(addr Word) uint {
-	if sam.P1RamSwap != 0 {
-		return 0x8000 ^ uint(addr)
-	} else {
-		return uint(addr)
-	}
+func UseExternalRomAssumingRom(addr Word) bool {
+	return true
 }
 
 // B is fundamental func to get byte.  Hack register access into here.
@@ -59,24 +46,11 @@ func B(addr Word) byte {
 		z = GetIOByte(addr)
 		L("GetIO %04x -> %02x : %c %c", addr, z, PrettyH(z), PrettyT(z))
 		devmem[255&addr] = z
+	} else if UseRom(addr) {
+		o := RomOffset(addr)
+		z = cartRom[o]
 	} else {
-		if !sam.TyAllRam && AddressInRomSpace(addr) {
-			if UseExternalRomAssumingRom(addr) {
-				//T()
-				o := ExternalRomOffset(addr)
-				z = cartRom[o]
-			} else {
-				//T()
-				o := InternalRomOffset(addr)
-				z = internalRom[o]
-			}
-		} else {
-			//T()
-			// Not ROM so use RAM
-			a := addr ^ Cond(sam.P1RamSwap != 0, Word(0x8000), Word(0))
-			z = mem[a]
-			//T("B", Hex(addr), Hex(a), Hex(z))
-		}
+		z = mem[addr]
 	}
 	if TraceMem {
 		L("\t\t\t\tGetB %04x -> %02x : %c %c", addr, z, PrettyH(z), PrettyT(z))
@@ -100,22 +74,12 @@ func PokeB(addr Word, b byte) {
 
 func PeekB(addr Word) byte {
 	var z byte
-	if !sam.TyAllRam && AddressInRomSpace(addr) {
-		if UseExternalRomAssumingRom(addr) {
-			//T()
-			o := ExternalRomOffset(addr)
-			z = cartRom[o]
-		} else {
-			//T()
-			o := InternalRomOffset(addr)
-			z = internalRom[o]
-		}
+	if UseRom(addr) {
+		o := RomOffset(addr)
+		z = cartRom[o]
 	} else {
-		//T()
 		// Not ROM so use RAM
-		a := addr ^ Cond(sam.P1RamSwap != 0, Word(0x8000), Word(0))
-		z = mem[a]
-		//T("B", Hex(addr), Hex(a), Hex(z))
+		z = mem[addr]
 	}
 	return z
 }
@@ -145,42 +109,13 @@ func WithMmuTask(task byte, fn func()) {
 }
 
 func PutGimeIOByte(a Word, b byte) {
-	// not used on coco1.
-	// TODO -- but, coco13 has this line:
-	// if 0xFF90 <= a && a < 0xFFC0 { PutGimeIOByte(a, b) }
-
 	log.Printf("Coco1: UNKNOWN PutGimeIOByte address: 0x%04x <- 0x%02x", a, b)
-	// log.Panicf("UNKNOWN PutGimeIOByte address: 0x%04x <- 0x%02x", a, b)
 }
 
 func GetGimeIOByte(a Word) byte {
 	log.Printf("Coco1: UNKNOWN GetGimeIOByte address: 0x%04x -> 0xFF", a)
 	return 0xFF
 }
-
-/*
-func GetCocoDisplayParams() *CocoDisplayParams {
-	z := &CocoDisplayParams{
-		BasicText:       *FlagBasicText,
-		Gime:            false,
-		Graphics:        false,
-		AttrsIfAlpha:    false,
-		VirtOffsetAddr:  0x8000, // TODO
-		HorzOffsetAddr:  0x80,   // TODO
-		VirtScroll:      0x0F,   // TODO
-		LinesPerField:   8,      // TODO
-		LinesPerCharRow: 8,      // TODO
-		Monochrome:      true,
-		HRES:            0,     // TODO
-		CRES:            0,     // TODO
-		HVEN:            false, // TODO
-	}
-	for i := 0; i < 16; i++ {
-		z.ColorMap[i] = byte(i) // TODO
-	}
-	return z
-}
-*/
 
 // TODO
 

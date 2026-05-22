@@ -33,6 +33,7 @@ var FlagGlobalMap = flag.String("global_map", "", "filename of .map file")
 // var FlagBootImageFilename = flag.String("boot", "", "")
 var FlagLoadmFilename = flag.String("loadm", "", "")
 var FlagCartFilename = flag.String("cart", "", "")
+var FlagBigRomFilename = flag.String("big_rom", "", "$8000 to $FF00")
 var FlagRom8000Filename = flag.String("rom_8000", "", "")
 var FlagRomA000Filename = flag.String("rom_a000", "", "")
 
@@ -178,11 +179,11 @@ func CoreDump(filename string) {
 	}
 	w := bufio.NewWriter(fd)
 	for i := 0; i < 0x10000; i++ {
-        if i < 0xFF00 {
-		    w.WriteByte(B(Word(i)))
-        } else {
-		    w.WriteByte(0)
-        }
+		if i < 0xFF00 {
+			w.WriteByte(B(Word(i)))
+		} else {
+			w.WriteByte(0)
+		}
 	}
 	for i := DRegEA; i <= PCRegEA; i++ {
 		word := EA(i).GetW()

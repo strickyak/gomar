@@ -245,6 +245,14 @@ func LoadCart(m []byte) {
 	}
 }
 
+func LoadBigRom(m []byte) {
+	size := Word(len(m))
+	offset := Word(0)
+	for i := Word(0); i < size; i++ {
+		cartRom[i+offset] = m[i]
+	}
+}
+
 func Loadm(loadm []byte) Word {
 	size := Word(len(loadm))
 	i := Word(0)

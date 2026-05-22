@@ -1,4 +1,4 @@
-//go:build coco1 || coco2 || coco3
+//go:build coco0 || coco1 || coco2 || coco3
 
 package emu
 

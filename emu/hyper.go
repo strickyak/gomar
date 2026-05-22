@@ -141,7 +141,7 @@ func MachinePointerToString(p Word) []byte {
 		} else if ' ' <= ch && ch <= '~' {
 			bb.WriteByte(ch)
 		} else {
-            CoreDump("MachinePointerToString (hyper.go)")
+			CoreDump("MachinePointerToString (hyper.go)")
 			log.Panicf("Bad char $%02x at $%04x after string %q starting at $%04x", ch, p-1, bb.String(), p0)
 		}
 	}
