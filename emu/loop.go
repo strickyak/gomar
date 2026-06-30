@@ -7,8 +7,7 @@ import (
 	//"bufio"
 	// "bytes"
 	"flag"
-	//"fmt"
-	"io/ioutil"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -79,7 +78,7 @@ func Main() {
 	}
 
 	if *FlagRomA000Filename != "" {
-		rom, err := ioutil.ReadFile(*FlagRomA000Filename)
+		rom, err := os.ReadFile(*FlagRomA000Filename)
 		if err != nil {
 			log.Fatalf("Cannot read rom image: %q: %v", *FlagRomA000Filename, err)
 		}
@@ -92,7 +91,7 @@ func Main() {
 	}
 
 	if *FlagRom8000Filename != "" {
-		rom, err := ioutil.ReadFile(*FlagRom8000Filename)
+		rom, err := os.ReadFile(*FlagRom8000Filename)
 		if err != nil {
 			log.Fatalf("Cannot read rom image: %q: %v", *FlagRom8000Filename, err)
 		}
@@ -102,7 +101,7 @@ func Main() {
 	}
 
 	if *FlagCartFilename != "" {
-		rom, err := ioutil.ReadFile(*FlagCartFilename)
+		rom, err := os.ReadFile(*FlagCartFilename)
 		if err != nil {
 			log.Fatalf("Cannot read rom image: %q: %v", *FlagCartFilename, err)
 		}
@@ -112,17 +111,21 @@ func Main() {
 	Logd("(end roms)")
 
 	if *FlagBigRomFilename != "" {
-		rom, err := ioutil.ReadFile(*FlagBigRomFilename)
+		rom, err := os.ReadFile(*FlagBigRomFilename)
 		if err != nil {
 			log.Fatalf("Cannot read rom image: %q: %v", *FlagBigRomFilename, err)
 		}
 		Logd("Loading BigRom Cart %q", *FlagBigRomFilename)
+		if len(rom) >= 0x7F00 {
+			fmt.Printf("\n*** ROM IMAGE IS TOO LARGE (%d bytes): %q ***\n", len(rom), *FlagBigRomFilename)
+			log.Fatalf("ROM IMAGE IS TOO LARGE (%d bytes): %q", len(rom), *FlagBigRomFilename)
+		}
 		LoadBigRom(rom)
 	}
 	Logd("(end roms)")
 
 	if *FlagLoadmFilename != "" {
-		loadm, err := ioutil.ReadFile(*FlagLoadmFilename)
+		loadm, err := os.ReadFile(*FlagLoadmFilename)
 		if err != nil {
 			log.Fatalf("Cannot read loadm image: %q: %v", *FlagLoadmFilename, err)
 		}
