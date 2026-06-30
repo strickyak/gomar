@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
@@ -100,20 +101,26 @@ func PrintHyper(var_ptr Word) {
 			i++
 			kind := format[i]
 			switch kind {
+			case '%':
+				bb.WriteByte('%')
 			case 'c':
 				bb.WriteString(fmt.Sprintf("%c", PeekB(var_ptr+1)))
+				var_ptr += 2
 			case 'x':
 				bb.WriteString(fmt.Sprintf("$%04x", PeekW(var_ptr)))
+				var_ptr += 2
 			case 'd':
-				bb.WriteString(fmt.Sprintf("%d", PeekW(var_ptr)))
+				bb.WriteString(fmt.Sprintf("%d", int16(PeekW(var_ptr))))
+				var_ptr += 2
 			case 'u':
 				bb.WriteString(fmt.Sprintf("%d", PeekW(var_ptr)))
+				var_ptr += 2
 			case 's', 'q':
 				bb.Write(MachinePointerToString(PeekW(var_ptr)))
+				var_ptr += 2
 			default:
 				log.Panicf("Bad char after %% in format string: '%c' in %q", kind, format)
 			}
-			var_ptr += 2
 		} else {
 			bb.WriteByte(ch)
 		}
@@ -164,18 +171,23 @@ func emit_Words(forOutput bool, args ...Word) {
 			i++
 			kind := format[i]
 			switch kind {
+			case '%':
+				bb.WriteByte('%')
 			case 'c':
 				bb.WriteString(fmt.Sprintf("%c", args[0]))
+				args = args[1:]
 			case 'x':
 				bb.WriteString(fmt.Sprintf("$%04x", args[0]))
+				args = args[1:]
 			case 'd':
 				bb.WriteString(fmt.Sprintf("%d.", args[0]))
+				args = args[1:]
 			case 's':
 				bb.Write(MachinePointerToString(args[0]))
+				args = args[1:]
 			default:
 				log.Panicf("Bad char after %% in format string: '%c' in %q", kind, format)
 			}
-			args = args[1:]
 		} else {
 			bb.WriteByte(ch)
 		}
@@ -313,6 +325,32 @@ func HyperOp(hop byte) {
 
 	case 131:
 		log_X_D()
+
+	case 132: // PutChar
+		ch := (byte)(dreg & 255)
+		if ' ' <= ch && ch <= '~' {
+			fmt.Printf("%c", ch)
+		} else if ch == 10 || ch == 13 {
+			fmt.Printf("\n")
+		} else {
+			fmt.Printf("{%d}", ch)
+		}
+
+	case 133: // GetChar
+		bb := make([]byte, 1)
+		n, err := os.Stdin.Read(bb)
+		if err == io.EOF {
+			fmt.Fprintf(os.Stderr, "\n[EOF, Exiting]\n")
+			os.Exit(0)
+		}
+		if err != nil {
+			log.Fatalf("ERROR ON STDIN: %v", err)
+		}
+		if n == 1 {
+			PutBReg(bb[0])
+		} else {
+			PutBReg(0)
+		}
 
 	default:
 		log.Printf("Unknown HyperOp $%x = $d.", hop, hop)
